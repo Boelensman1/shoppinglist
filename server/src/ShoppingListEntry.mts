@@ -4,6 +4,7 @@ class ShoppingListEntry extends Model {
   id!: string
   value!: string
   checked!: boolean
+  order!: number
   createdAt!: string
   updatedAt?: string
 
@@ -28,6 +29,7 @@ class ShoppingListEntry extends Model {
         id: { type: 'string' },
         value: { type: 'string' },
         checked: { type: 'boolean' },
+        order: { type: 'number' },
         createdAt: { type: 'string', format: 'date-time' },
         updatedAt: { type: ['string', 'null'], format: 'date-time' },
       },

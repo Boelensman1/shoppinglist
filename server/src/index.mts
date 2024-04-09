@@ -48,6 +48,7 @@ const init = async () => {
   if (!(await knex.schema.hasTable('shoppingListEntries'))) {
     await knex.schema.createTable('shoppingListEntries', (table) => {
       table.string('id').primary()
+      table.integer('order').unique().notNullable()
       table.string('value').notNullable()
       table.boolean('checked').notNullable()
       table.timestamps(true, true, true)
@@ -57,6 +58,7 @@ const init = async () => {
       id: 'INITIAL',
       value: '',
       checked: false,
+      order: Number.MIN_SAFE_INTEGER,
     })
   }
 }
@@ -80,14 +82,16 @@ const main = async () => {
     console.log('A new client connected.')
 
     // send current state
-    ShoppingListEntry.query().then((results) => {
-      ws.send(
-        JSON.stringify({
-          type: 'INITIAL_FULL_DATA',
-          payload: results.map((r) => r.toJSON()),
-        }),
-      )
-    })
+    ShoppingListEntry.query()
+      .orderBy('order')
+      .then((results) => {
+        ws.send(
+          JSON.stringify({
+            type: 'INITIAL_FULL_DATA',
+            payload: results.map((r) => r.toJSON()),
+          }),
+        )
+      })
 
     // Receiving message from client
     ws.on('message', (message) => {
@@ -98,9 +102,30 @@ const main = async () => {
       ) as unknown as ParsedMessage
 
       switch (parsedMessage.type) {
-        case 'ADD_LIST_ITEM':
-          ShoppingListEntry.query().insert(parsedMessage.payload.item).execute()
+        case 'ADD_LIST_ITEM': {
+          ShoppingListEntry.transaction(async (trx) => {
+            const entryBefore = await ShoppingListEntry.query(trx)
+              .findById(parsedMessage.payload.afterId)
+              .select('order')
+              .throwIfNotFound()
+            const entryAfter = await ShoppingListEntry.query(trx)
+              .where('order', '>', entryBefore.order)
+              .orderBy('order')
+              .select('order')
+              .limit(1)
+              .first()
+
+            const order = entryAfter
+              ? Math.round((entryBefore.order + entryAfter.order) / 2)
+              : entryBefore.order + 100000
+
+            await ShoppingListEntry.query(trx).insert({
+              ...parsedMessage.payload.item,
+              order,
+            })
+          })
           return
+        }
         case 'REMOVE_LIST_ITEM':
           ShoppingListEntry.query()
             .findById(parsedMessage.payload.id)
