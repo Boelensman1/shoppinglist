@@ -12,16 +12,6 @@ import useStore from './store/useStore'
 import ShoppingListItem from './components/ShoppingListItem'
 import { webSocketManager } from './WebSocketManager'
 
-const sortItems = (items: Item[]) => {
-  // Js sort is stable!
-  return [...items].sort((a, b) => {
-    if (a.checked && !b.checked) return 1
-    if (b.checked && !a.checked) return -1
-    // If both have the same checked, maintain original order
-    return 0
-  })
-}
-
 const MotionList = motion(List)
 const MotionListItem = motion(ListItem)
 
@@ -33,9 +23,13 @@ const App: FC<AppProps> = ({ items }) => (
   <MotionConfig transition={{ duration: 0.15 }}>
     <AnimatePresence>
       <MotionList layout>
-        {sortItems(items).map((item, i) => (
+        {items.map((item, i) => (
           <MotionListItem key={item.id} layout>
-            <ShoppingListItem isLast={i === items.length - 1} {...item} />
+            <ShoppingListItem
+              isOnly={items.length === 1}
+              isLast={i === items.length - 1}
+              {...item}
+            />
           </MotionListItem>
         ))}
       </MotionList>

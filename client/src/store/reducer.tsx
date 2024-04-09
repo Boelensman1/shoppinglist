@@ -62,10 +62,39 @@ const reducer = produce((draft: State, action: Action) => {
         (item) => item.id === action.payload.id,
       )
 
+      // Find the last unchecked item
+      let lastUncheckedIndex = draft.items.length - 1
+      while (
+        lastUncheckedIndex >= 0 &&
+        draft.items[lastUncheckedIndex].checked
+      ) {
+        lastUncheckedIndex--
+      }
+
+      // update item
       draft.items[index] = {
         ...draft.items[index],
         // @ts-expect-error have yet to type this correctly
         checked: action.payload.newChecked,
+      }
+
+      if (lastUncheckedIndex === index) {
+        return
+      }
+
+      // Move it to the end of the unchecked array
+      const [item] = draft.items.splice(index, 1)
+      if (lastUncheckedIndex === -1) {
+        // Put it at the start if all other items are checked
+        draft.items.unshift(item)
+      } else {
+        // Insert before/after the last unchecked item, depending on checked
+        draft.items.splice(
+          // @ts-expect-error have yet to type this correctly
+          lastUncheckedIndex + Number(!action.payload.newChecked),
+          0,
+          item,
+        )
       }
       break
     }
