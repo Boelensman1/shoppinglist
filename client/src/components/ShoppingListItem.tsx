@@ -28,6 +28,7 @@ const parsePasteLineChecked = (line: string) => {
 interface ShoppingListItemProps {
   id: string
   isLast: boolean
+  isOnly: boolean
   value: string
   checked: boolean
 }
@@ -35,6 +36,7 @@ interface ShoppingListItemProps {
 const ShoppingListItem: FC<ShoppingListItemProps> = ({
   id,
   isLast,
+  isOnly,
   value,
   checked,
 }) => {
@@ -79,9 +81,12 @@ const ShoppingListItem: FC<ShoppingListItemProps> = ({
         dispatch(actions.addListItem(id))
       }
     }
+
     if (event.key === 'Backspace' && event.currentTarget.value === '') {
       event.preventDefault()
-      dispatch(actions.removeListItem(id))
+      if (!isOnly) {
+        dispatch(actions.removeListItem(id))
+      }
     }
   }
 

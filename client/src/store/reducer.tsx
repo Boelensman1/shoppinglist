@@ -23,11 +23,6 @@ const reducer = produce((draft: State, action: Action) => {
       break
     }
     case types.REMOVE_LIST_ITEM: {
-      if (draft.items.length === 1) {
-        // don't remove last item
-        break
-      }
-
       const index = draft.items.findIndex(
         // @ts-expect-error have yet to type this correctly
         (item) => item.id === action.payload.id,
