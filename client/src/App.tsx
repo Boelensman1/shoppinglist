@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, FC } from 'react'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 
+import useMediaQuery from '@mui/material/useMediaQuery'
 import Sheet from '@mui/joy/Sheet'
 import List from '@mui/joy/List'
 import ListItem from '@mui/joy/ListItem'
@@ -24,8 +25,27 @@ const sortItems = (items: Item[]) => {
 const MotionList = motion(List)
 const MotionListItem = motion(ListItem)
 
-const App = () => {
+interface AppProps {
+  items: Item[]
+}
+
+const App: FC<AppProps> = ({ items }) => (
+  <MotionConfig transition={{ duration: 0.15 }}>
+    <AnimatePresence>
+      <MotionList layout>
+        {sortItems(items).map((item, i) => (
+          <MotionListItem key={item.id} layout>
+            <ShoppingListItem isLast={i === items.length - 1} {...item} />
+          </MotionListItem>
+        ))}
+      </MotionList>
+    </AnimatePresence>
+  </MotionConfig>
+)
+
+const AppContainer = () => {
   const [{ items, loaded }, dispatch] = useStore()
+  const useMobileLayout = useMediaQuery('(max-width:624px)')
 
   useEffect(() => {
     const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws'
@@ -42,6 +62,10 @@ const App = () => {
     return null
   }
 
+  if (useMobileLayout) {
+    return <App items={items} />
+  }
+
   return (
     <Sheet
       sx={{
@@ -55,19 +79,9 @@ const App = () => {
       }}
       variant="outlined"
     >
-      <MotionConfig transition={{ duration: 0.15 }}>
-        <AnimatePresence>
-          <MotionList layout>
-            {sortItems(items).map((item, i) => (
-              <MotionListItem key={item.id} layout>
-                <ShoppingListItem isLast={i === items.length - 1} {...item} />
-              </MotionListItem>
-            ))}
-          </MotionList>
-        </AnimatePresence>
-      </MotionConfig>
+      <App items={items} />
     </Sheet>
   )
 }
 
-export default App
+export default AppContainer
