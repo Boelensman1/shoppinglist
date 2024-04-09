@@ -3,6 +3,7 @@ import { FC, useEffect, useRef } from 'react'
 import Stack from '@mui/joy/Stack'
 import Radio from '@mui/joy/Radio'
 import Input from '@mui/joy/Input'
+import Box from '@mui/joy/Box'
 import useStore from '../store/useStore'
 import actions from '../store/actions'
 
@@ -144,16 +145,34 @@ const ShoppingListItem: FC<ShoppingListItemProps> = ({
         onMouseDown={(e) => e.preventDefault()}
         onClick={handleChecked}
       />
-      <Input
-        fullWidth
-        variant="soft"
-        placeholder="Nieuw item..."
-        value={value}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        onPaste={handlePaste}
-        ref={inputRef}
-      />
+      <Box
+        sx={{
+          width: '100%',
+          position: 'relative',
+          '&::after': {
+            content: checked ? '""' : 'none', // Only show when checked
+            position: 'absolute',
+            width: 'calc(100% - 20px)',
+            height: '1px',
+            backgroundColor: 'primary.solidBg',
+            top: '50%',
+            left: '10px',
+            transform: 'translateY(-50%)',
+            pointerEvents: 'none',
+          },
+        }}
+      >
+        <Input
+          ref={inputRef}
+          fullWidth
+          variant="soft"
+          placeholder="Nieuw item..."
+          value={value}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
+        />
+      </Box>
     </Stack>
   )
 }
