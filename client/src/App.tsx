@@ -1,12 +1,28 @@
 import { useEffect } from 'react'
+import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 
 import Sheet from '@mui/joy/Sheet'
 import List from '@mui/joy/List'
 import ListItem from '@mui/joy/ListItem'
 
+import type Item from './types/Item'
+
 import useStore from './store/useStore'
 import ShoppingListItem from './components/ShoppingListItem'
 import { webSocketManager } from './WebSocketManager'
+
+const sortItems = (items: Item[]) => {
+  // Js sort is stable!
+  return [...items].sort((a, b) => {
+    if (a.checked && !b.checked) return 1
+    if (b.checked && !a.checked) return -1
+    // If both have the same checked, maintain original order
+    return 0
+  })
+}
+
+const MotionList = motion(List)
+const MotionListItem = motion(ListItem)
 
 const App = () => {
   const [{ items, loaded }, dispatch] = useStore()
@@ -39,13 +55,17 @@ const App = () => {
       }}
       variant="outlined"
     >
-      <List>
-        {items.map((item, i) => (
-          <ListItem key={item.id}>
-            <ShoppingListItem isLast={i == items.length - 1} {...item} />
-          </ListItem>
-        ))}
-      </List>
+      <MotionConfig transition={{ duration: 0.15 }}>
+        <AnimatePresence>
+          <MotionList layout>
+            {sortItems(items).map((item, i) => (
+              <MotionListItem key={item.id} layout>
+                <ShoppingListItem isLast={i === items.length - 1} {...item} />
+              </MotionListItem>
+            ))}
+          </MotionList>
+        </AnimatePresence>
+      </MotionConfig>
     </Sheet>
   )
 }
