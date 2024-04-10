@@ -20,6 +20,8 @@ const reducer = produce((draft: State, action: Action) => {
 
       // @ts-expect-error have yet to type this correctly
       draft.items.splice(afterIndex + 1, 0, action.payload.item)
+      // @ts-expect-error have yet to type this correctly
+      draft.focusTargetId = action.payload.item.id
       break
     }
     case types.REMOVE_LIST_ITEM: {

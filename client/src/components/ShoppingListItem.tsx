@@ -52,11 +52,6 @@ const ShoppingListItem: FC<ShoppingListItemProps> = ({
     }
   }
 
-  // grab focus when first created
-  useEffect(() => {
-    getInputEl()?.focus()
-  }, [])
-
   // grab focus when requested
   useEffect(() => {
     if (focusTargetId === id) {
@@ -78,6 +73,7 @@ const ShoppingListItem: FC<ShoppingListItemProps> = ({
     }
     if (event.key === 'Tab') {
       if (isLast) {
+        event.preventDefault()
         dispatch(actions.addListItem(id))
       }
     }
