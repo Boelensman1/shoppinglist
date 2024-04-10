@@ -11,6 +11,7 @@ import type Item from './types/Item'
 import useStore from './store/useStore'
 import ShoppingListItem from './components/ShoppingListItem'
 import { webSocketManager } from './WebSocketManager'
+import UndoRedoHandler from './components/UndoRedoHandler'
 
 const MotionList = motion(List)
 const MotionListItem = motion(ListItem)
@@ -73,6 +74,7 @@ const AppContainer = () => {
       }}
       variant="outlined"
     >
+      <UndoRedoHandler />
       <App items={items} />
     </Sheet>
   )

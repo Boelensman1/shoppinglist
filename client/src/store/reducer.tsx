@@ -6,30 +6,41 @@ import type Action from '../types/Action'
 import { types } from './actions'
 import initialState from './initial'
 
-const wsTypes = {
-  INITIAL_FULL_DATA: 'INITIAL_FULL_DATA',
-}
-
 const reducer = produce((draft: State, action: Action) => {
   switch (action.type) {
     case types.ADD_LIST_ITEM: {
       const afterIndex = draft.items.findIndex(
-        // @ts-expect-error have yet to type this correctly
         (item) => item.id === action.payload.afterId,
       )
 
-      // @ts-expect-error have yet to type this correctly
       draft.items.splice(afterIndex + 1, 0, action.payload.item)
-      // @ts-expect-error have yet to type this correctly
       draft.focusTargetId = action.payload.item.id
+
+      if (!action.redo && !action.fromServer) {
+        draft.undoList.push({
+          type: types.REMOVE_LIST_ITEM,
+          redo: action,
+          payload: { id: action.payload.item.id },
+        })
+      }
       break
     }
     case types.REMOVE_LIST_ITEM: {
       const index = draft.items.findIndex(
-        // @ts-expect-error have yet to type this correctly
         (item) => item.id === action.payload.id,
       )
-      draft.items.splice(index, 1)
+      const [deletedItem] = draft.items.splice(index, 1)
+
+      if (!action.redo && !action.fromServer) {
+        draft.undoList.push({
+          type: types.ADD_LIST_ITEM,
+          redo: action,
+          payload: {
+            afterId: draft.items[index - 1].id,
+            item: deletedItem,
+          },
+        })
+      }
 
       if (draft.items.length > index) {
         // Focus the item below
@@ -42,22 +53,38 @@ const reducer = produce((draft: State, action: Action) => {
     }
     case types.UPDATE_LIST_ITEM_VALUE: {
       const index = draft.items.findIndex(
-        // @ts-expect-error have yet to type this correctly
         (item) => item.id === action.payload.id,
       )
 
+      if (!action.redo && !action.fromServer) {
+        const oldValue = draft.items[index].value
+        draft.undoList.push({
+          type: types.UPDATE_LIST_ITEM_VALUE,
+          redo: action,
+          payload: { id: action.payload.id, newValue: oldValue },
+        })
+      }
+
       draft.items[index] = {
         ...draft.items[index],
-        // @ts-expect-error have yet to type this correctly
         value: action.payload.newValue,
       }
+
       break
     }
     case types.UPDATE_LIST_ITEM_CHECKED: {
       const index = draft.items.findIndex(
-        // @ts-expect-error have yet to type this correctly
         (item) => item.id === action.payload.id,
       )
+
+      if (!action.redo && !action.fromServer) {
+        const oldChecked = draft.items[index].checked
+        draft.undoList.push({
+          type: types.UPDATE_LIST_ITEM_CHECKED,
+          redo: action,
+          payload: { id: action.payload.id, newChecked: oldChecked },
+        })
+      }
 
       // Find the last unchecked item
       let lastUncheckedIndex = draft.items.length - 1
@@ -71,7 +98,6 @@ const reducer = produce((draft: State, action: Action) => {
       // update item
       draft.items[index] = {
         ...draft.items[index],
-        // @ts-expect-error have yet to type this correctly
         checked: action.payload.newChecked,
       }
 
@@ -87,7 +113,6 @@ const reducer = produce((draft: State, action: Action) => {
       } else {
         // Insert before/after the last unchecked item, depending on checked
         draft.items.splice(
-          // @ts-expect-error have yet to type this correctly
           lastUncheckedIndex + Number(!action.payload.newChecked),
           0,
           item,
@@ -95,10 +120,20 @@ const reducer = produce((draft: State, action: Action) => {
       }
       break
     }
-    case wsTypes.INITIAL_FULL_DATA: {
-      // @ts-expect-error have yet to type this correctly
+    case types.INITIAL_FULL_DATA: {
       draft.items = action.payload
       draft.loaded = true
+      break
+    }
+    case types.UNDO: {
+      const undoActionDone = draft.undoList.pop()
+      if (undoActionDone) {
+        draft.redoList.push(undoActionDone.redo!)
+      }
+      break
+    }
+    case types.REDO: {
+      draft.redoList.pop()
       break
     }
     default:

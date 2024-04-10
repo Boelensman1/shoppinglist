@@ -28,7 +28,11 @@ class WebSocketManager {
       const message = JSON.parse(event.data)
 
       if (this.dispatch) {
-        this.dispatch({ type: message.type, payload: message.payload })
+        this.dispatch({
+          type: message.type,
+          fromServer: true,
+          payload: message.payload,
+        })
       }
     }
 
