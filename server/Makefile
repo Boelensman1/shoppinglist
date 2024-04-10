@@ -10,4 +10,7 @@ lint: node_modules
 	npx prettier --check .
 	npx tsc --noEmit
 
+dev:
+	npx tsx watch ./src/index.mts
+
 .PHONY: dev lint prod
