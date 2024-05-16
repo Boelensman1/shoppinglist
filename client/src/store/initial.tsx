@@ -6,6 +6,8 @@ const initialState: State = {
   loaded: false,
   undoList: [],
   redoList: [],
+  webSocketManager: null,
+  webSocketState: 'disconnected',
 }
 
 export default initialState

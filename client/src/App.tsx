@@ -10,8 +10,10 @@ import type Item from './types/Item'
 
 import useStore from './store/useStore'
 import ShoppingListItem from './components/ShoppingListItem'
-import { webSocketManager } from './WebSocketManager'
+import WebSocketManager from './WebSocketManager'
 import UndoRedoHandler from './components/UndoRedoHandler'
+import { Box, CircularProgress } from '@mui/joy'
+import actions from './store/actions'
 
 const MotionList = motion(List)
 const MotionListItem = motion(ListItem)
@@ -39,7 +41,7 @@ const App: FC<AppProps> = ({ items }) => (
 )
 
 const AppContainer = () => {
-  const [{ items, loaded }, dispatch] = useStore()
+  const [{ items, loaded, webSocketState }, dispatch] = useStore()
   const useMobileLayout = useMediaQuery('(max-width:624px)')
 
   useEffect(() => {
@@ -49,12 +51,31 @@ const AppContainer = () => {
       ? 'ws://127.0.0.1:1222'
       : `${wsScheme}://${window.location.host}/${basePath}/ws`
 
+    const webSocketManager = new WebSocketManager()
+
     // Connect to WebSocket and pass the dispatch function
     webSocketManager.connect(wsUrl, dispatch)
+
+    dispatch(actions.connectWebSocketManager(webSocketManager))
+
+    return () => {
+      webSocketManager.disconnect()
+    }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!loaded) {
-    return null
+  if (!loaded || webSocketState !== 'connected') {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100vh',
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    )
   }
 
   if (useMobileLayout) {

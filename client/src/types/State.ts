@@ -1,4 +1,5 @@
-import { UndoableAction } from './Action'
+import type WebSocketManager from '../WebSocketManager'
+import type { UndoableAction } from './Action'
 import type Item from './Item'
 
 interface State {
@@ -7,6 +8,8 @@ interface State {
   loaded: boolean
   undoList: UndoableAction[]
   redoList: UndoableAction[]
+  webSocketManager: WebSocketManager | null
+  webSocketState: 'connected' | 'disconnected'
 }
 
 export default State

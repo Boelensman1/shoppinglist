@@ -102,7 +102,7 @@ const reducer = produce((draft: State, action: Action) => {
       }
 
       if (lastUncheckedIndex === index) {
-        return
+        break
       }
 
       // Move it to the end of the unchecked array
@@ -136,10 +136,18 @@ const reducer = produce((draft: State, action: Action) => {
       draft.redoList.pop()
       break
     }
-    default:
-      // Optionally, handle other actions
+
+    case types.CONNECT_WEBSOCKET_MANAGER: {
+      draft.webSocketManager = action.payload
       break
+    }
+
+    case types.WEBSOCKET_CONNECTIONSTATE_CHANGED: {
+      draft.webSocketState = action.payload
+      break
+    }
   }
-}, initialState)
+}, initialState) as (state: State | undefined, action: Action) => State
+// unsure why I need to manaully type this
 
 export default reducer

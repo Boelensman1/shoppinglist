@@ -1,59 +1,74 @@
+import type WebSocketManager from '../WebSocketManager'
 import type { types } from '../store/actions'
 import type Item from './Item'
+import type State from './State'
 
-export interface RemoveListItemAction {
+interface BaseAction {
+  fromServer?: true
+  private?: true
+}
+
+export interface RemoveListItemAction extends BaseAction {
   type: typeof types.REMOVE_LIST_ITEM
   redo?: UndoableAction
-  fromServer?: true
   payload: {
     id: string
   }
 }
 
-export interface AddListItemAction {
+export interface AddListItemAction extends BaseAction {
   type: typeof types.ADD_LIST_ITEM
   redo?: UndoableAction
-  fromServer?: true
   payload: {
     afterId: string
     item: Item
   }
 }
 
-export interface UpdateListItemValueAction {
+export interface UpdateListItemValueAction extends BaseAction {
   type: typeof types.UPDATE_LIST_ITEM_VALUE
   redo?: UndoableAction
-  fromServer?: true
   payload: {
     id: string
     newValue: string
   }
 }
 
-export interface UpdateListItemCheckedAction {
+export interface UpdateListItemCheckedAction extends BaseAction {
   type: typeof types.UPDATE_LIST_ITEM_CHECKED
   redo?: UndoableAction
-  fromServer?: true
   payload: {
     id: string
     newChecked: boolean
   }
 }
 
-export interface InitialFullDataAction {
+export interface InitialFullDataAction extends BaseAction {
   type: typeof types.INITIAL_FULL_DATA
-  fromServer?: true
   payload: Item[]
+  fromServer: true
 }
 
-export interface UndoAction {
+export interface UndoAction extends BaseAction {
   type: typeof types.UNDO
   payload: Action
 }
 
-export interface RedoAction {
+export interface RedoAction extends BaseAction {
   type: typeof types.REDO
   payload: Action
+}
+
+export interface ConnectWebSocketManagerAction extends BaseAction {
+  type: typeof types.CONNECT_WEBSOCKET_MANAGER
+  payload: WebSocketManager
+  private: true
+}
+
+export interface WebsocketConnectionStateChangedAction extends BaseAction {
+  type: typeof types.WEBSOCKET_CONNECTIONSTATE_CHANGED
+  payload: State['webSocketState']
+  private: true
 }
 
 export type UndoableAction =
@@ -62,6 +77,12 @@ export type UndoableAction =
   | UpdateListItemValueAction
   | UpdateListItemCheckedAction
 
-type Action = UndoableAction | InitialFullDataAction | UndoAction | RedoAction
+type Action =
+  | UndoableAction
+  | InitialFullDataAction
+  | UndoAction
+  | RedoAction
+  | ConnectWebSocketManagerAction
+  | WebsocketConnectionStateChangedAction
 
 export default Action

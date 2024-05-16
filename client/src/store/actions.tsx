@@ -1,10 +1,11 @@
 import type Item from '../types/Item'
-import type Action from '../types/Action'
 
-import { webSocketManager } from '../WebSocketManager'
+import type WebSocketManager from '../WebSocketManager'
 import randomString from '../utils/randomString'
 import type {
   AddListItemAction,
+  ConnectWebSocketManagerAction,
+  WebsocketConnectionStateChangedAction,
   RedoAction,
   RemoveListItemAction,
   UndoAction,
@@ -24,41 +25,41 @@ export const types = {
 
   // actions only received by server, never send
   INITIAL_FULL_DATA: 'INITIAL_FULL_DATA' as const,
+
+  // actions that should not be forwarded
+  CONNECT_WEBSOCKET_MANAGER: 'CONNECT_WEBSOCKET_MANAGER' as const,
+  WEBSOCKET_CONNECTIONSTATE_CHANGED:
+    'WEBSOCKET_CONNECTIONSTATE_CHANGED' as const,
 }
 
-// Define a type for the actions object to specify the function signatures
-type ActionsToDecorate = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: (...args: any[]) => Action
-}
-
-const addWebSocketManager = (actionsToDecorate: ActionsToDecorate) => {
-  Object.entries(actionsToDecorate).forEach(([key, value]) => {
-    actionsToDecorate[key] = (...input) => {
-      const actionObj = value(...input)
-      if (actionObj.type === 'UNDO' || actionObj.type === 'REDO') {
-        webSocketManager.sendMessage(actionObj.payload)
-      } else {
-        webSocketManager.sendMessage(actionObj)
-      }
-      return actionObj
-    }
-  })
-  return actionsToDecorate
-}
-
-const actions = addWebSocketManager({
+const actions = {
+  connectWebSocketManager: (
+    wsm: WebSocketManager,
+  ): ConnectWebSocketManagerAction => ({
+    type: types.CONNECT_WEBSOCKET_MANAGER,
+    payload: wsm,
+    private: true,
+  }),
+  webSocketConnectionStateChanged: (
+    newState: WebsocketConnectionStateChangedAction['payload'],
+  ): WebsocketConnectionStateChangedAction => ({
+    type: types.WEBSOCKET_CONNECTIONSTATE_CHANGED,
+    payload: newState,
+    private: true,
+  }),
   removeListItem: (id: string): RemoveListItemAction => ({
     type: types.REMOVE_LIST_ITEM,
     payload: { id },
   }),
-  addListItem: (afterId: string, item?: Item): AddListItemAction => ({
-    type: types.ADD_LIST_ITEM,
-    payload: {
-      afterId,
-      item: item ?? { id: randomString(), value: '', checked: false },
-    },
-  }),
+  addListItem: (afterId: string, item?: Item): AddListItemAction => {
+    return {
+      type: types.ADD_LIST_ITEM,
+      payload: {
+        afterId,
+        item: item ?? { id: randomString(), value: '', checked: false },
+      },
+    }
+  },
   updateListItemValue: (
     id: string,
     newValue: string,
@@ -81,6 +82,6 @@ const actions = addWebSocketManager({
     type: types.REDO,
     payload: action,
   }),
-})
+}
 
 export default actions

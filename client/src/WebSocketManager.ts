@@ -1,27 +1,27 @@
 import { type Dispatch } from 'react'
 
 import type Action from './types/Action'
+import actions from './store/actions'
 
 class WebSocketManager {
-  private static instance: WebSocketManager
   private webSocket: WebSocket | null = null
   private dispatch: Dispatch<Action> | null = null
+  private shouldReconnect = true
+  private reconnectTimeout: NodeJS.Timeout | null = null
 
-  private constructor() {}
-
-  public static getInstance(): WebSocketManager {
-    if (!WebSocketManager.instance) {
-      WebSocketManager.instance = new WebSocketManager()
-    }
-    return WebSocketManager.instance
+  get isConnected() {
+    return !!this.webSocket?.OPEN
   }
 
   connect(url: string, dispatch: Dispatch<Action>) {
+    console.log('Websocket connecting...')
     this.dispatch = dispatch // Set the dispatch function
+
     this.webSocket = new WebSocket(url)
 
     this.webSocket.onopen = () => {
       console.log('WebSocket connected.')
+      dispatch(actions.webSocketConnectionStateChanged('connected'))
     }
 
     this.webSocket.onmessage = (event) => {
@@ -29,17 +29,36 @@ class WebSocketManager {
 
       if (this.dispatch) {
         this.dispatch({
-          type: message.type,
+          ...message,
           fromServer: true,
-          payload: message.payload,
         })
       }
     }
 
     this.webSocket.onclose = () => {
       console.log('WebSocket disconnected.')
+      dispatch(actions.webSocketConnectionStateChanged('disconnected'))
+
       this.webSocket = null
       this.dispatch = null // Clear the dispatch function on disconnect
+
+      if (this.shouldReconnect) {
+        this.reconnectTimeout = setTimeout(
+          () => this.connect(url, dispatch.bind(null)),
+          1000,
+        )
+      }
+    }
+  }
+
+  disconnect() {
+    this.shouldReconnect = false
+    if (this.webSocket) {
+      this.webSocket.close()
+    }
+    if (this.reconnectTimeout) {
+      console.log('Clearing timeout')
+      clearTimeout(this.reconnectTimeout)
     }
   }
 
@@ -52,4 +71,4 @@ class WebSocketManager {
   }
 }
 
-export const webSocketManager = WebSocketManager.getInstance()
+export default WebSocketManager
