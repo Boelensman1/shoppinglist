@@ -22,13 +22,19 @@ const parsePasteLineChecked = (line: string) => {
   if (line.trim().startsWith('- [ ]')) {
     return false
   }
-  return null
+  return false
 }
 
 interface ShoppingListItemProps {
   id: string
   isLast: boolean
   isOnly: boolean
+  value: string
+  checked: boolean
+}
+
+interface Line {
+  id: string
   value: string
   checked: boolean
 }
@@ -94,7 +100,7 @@ const ShoppingListItem: FC<ShoppingListItemProps> = ({
       return
     }
 
-    const lines = pastedLines.map((line) => ({
+    const lines: Line[] = pastedLines.map((line) => ({
       id: randomString(),
       value: parsePasteLineValue(line),
       checked: parsePasteLineChecked(line),
