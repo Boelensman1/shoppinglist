@@ -79,7 +79,11 @@ const AppContainer = () => {
   }
 
   if (useMobileLayout) {
-    return <App items={items} />
+    return (
+      <Box sx={{ py: 3, px: 1 }}>
+        <App items={items} />
+      </Box>
+    )
   }
 
   return (
