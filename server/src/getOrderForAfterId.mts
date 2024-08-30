@@ -24,7 +24,7 @@ const distributeEntryOrders = async (
   }
 
   // return new biggest order
-  return newEntries[newEntries.length].order
+  return newEntries[newEntries.length - 1].order
 }
 
 const getOrderForAfterId = async (
