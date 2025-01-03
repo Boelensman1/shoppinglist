@@ -10,9 +10,12 @@ export default defineConfig({
     For more info see https://github.com/thetarnav/solid-devtools/tree/main/packages/extension#readme
     */
     // devtools(),
-    solidPlugin(),
+    solidPlugin({}),
     VitePWA({
       registerType: 'autoUpdate',
+      manifest: {
+        theme_color: '#fff',
+      },
     }),
   ],
   server: {

@@ -8,7 +8,7 @@ dev: node_modules
 
 dist: node_modules $(SRC_FILES)
 	npx tsc
-	npx vite build
+	npx vite build --base=/shoppinglist
 
 lint: node_modules
 	npx prettier --check .
