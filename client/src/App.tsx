@@ -84,7 +84,7 @@ const App: Component<AppProps> = (props) => {
             'bg-white',
             useMobileLayout()
               ? ' py-3 px-1'
-              : ' max-w-xl mx-auto py-5 px-6 rounded-sm shadow-md border',
+              : ' max-w-xl mx-auto py-5 pr-6 pl-4 rounded-sm shadow-md border',
           )}
         >
           <ShoppingList items={state.items} />

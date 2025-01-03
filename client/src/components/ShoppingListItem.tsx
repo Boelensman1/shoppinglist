@@ -144,8 +144,8 @@ const ShoppingListItem: Component<ShoppingListItemProps> = (props) => {
         checked={props.checked}
         onMouseDown={(e) => e.preventDefault()}
         onClick={handleChecked}
-        style={{ transform: 'scale(1.5)' }}
-        class="mx-1"
+        style={{ transform: 'scale(1.6)' }}
+        class="ml-2 mr-3"
       />
       <div class="relative w-full">
         <input
