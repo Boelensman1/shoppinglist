@@ -13,14 +13,14 @@
   "devDependencies": {
     "@tsconfig/node20": "^20.1.4",
     "@types/node": "^20.12.6",
-    "@types/ws": "^8.5.10",
-    "prettier": "^3.2.5",
-    "tsx": "^4.7.2",
-    "typescript": "^5.4.4"
+    "@types/ws": "^8.5.13",
+    "prettier": "^3.4.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
   },
   "dependencies": {
-    "better-sqlite3": "^9.4.5",
-    "objection": "^3.1.4",
-    "ws": "^8.16.0"
+    "better-sqlite3": "^11.7.0",
+    "objection": "^3.1.5",
+    "ws": "^8.18.0"
   }
 }
