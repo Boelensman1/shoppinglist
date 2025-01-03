@@ -88,7 +88,7 @@ const App: Component<AppProps> = (props) => {
   return (
     <div
       class={clsx(
-        'w-screen h-screen',
+        'w-screen h-dvh',
         !useMobileLayout() && 'py-4',
         state.loaded && state.webSocketState === 'disconnected' && 'bg-red-500',
         state.loaded &&
