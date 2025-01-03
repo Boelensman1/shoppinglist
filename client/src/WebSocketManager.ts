@@ -3,7 +3,11 @@ import { createWS } from '@solid-primitives/websocket'
 import type Action from './store/types/Action'
 import type Dispatch from './store/types/Dispatch'
 import actions, { isUndoableAction } from './store/actions'
-import { UndoableAction } from './store/types/Action'
+import { MergeableUndoableAction, UndoableAction } from './store/types/Action'
+
+const canMerge = (a: UndoableAction): a is MergeableUndoableAction =>
+  // @ts-expect-error could be an UndoableAction instead of an MergeableUndoableAction
+  a.payload && typeof a.payload.id !== 'undefined'
 
 const mergeOfflineActionsQueue = (actions: Action[]) => {
   return actions.reduce((acc, action) => {
@@ -15,8 +19,11 @@ const mergeOfflineActionsQueue = (actions: Action[]) => {
       case 'UPDATE_LIST_ITEM_CHECKED':
       case 'UPDATE_LIST_ITEM_VALUE': {
         const existing = acc.find(
-          (a) => a.payload.id === action.payload.id && a.type === action.type,
-        )
+          (a) =>
+            canMerge(a) &&
+            a.payload.id === action.payload.id &&
+            a.type === action.type,
+        ) as MergeableUndoableAction | undefined
         if (existing) {
           existing.payload = action.payload
           return acc
@@ -26,9 +33,13 @@ const mergeOfflineActionsQueue = (actions: Action[]) => {
       case 'REMOVE_LIST_ITEM': {
         const addedWhileOffline = acc.find(
           (a) =>
-            a.payload.id === action.payload.id && a.type === 'ADD_LIST_ITEM',
+            canMerge(a) &&
+            a.payload.id === action.payload.id &&
+            a.type === 'ADD_LIST_ITEM',
+        ) as MergeableUndoableAction | undefined
+        const newAcc = acc.filter(
+          (a) => canMerge(a) && a.payload.id !== action.payload.id,
         )
-        const newAcc = acc.filter((a) => a.payload.id !== action.payload.id)
 
         if (!addedWhileOffline) {
           newAcc.push(action)

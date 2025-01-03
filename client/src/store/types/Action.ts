@@ -79,11 +79,14 @@ export interface WebsocketConnectionStateChangedAction extends BaseAction {
   private: true
 }
 
-export type UndoableAction =
+export type MergeableUndoableAction =
   | RemoveListItemAction
   | AddListItemAction
   | UpdateListItemValueAction
   | UpdateListItemCheckedAction
+
+export type UndoableAction =
+  | MergeableUndoableAction
   | ClearListAction
   | SetListAction
 
