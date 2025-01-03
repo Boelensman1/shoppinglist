@@ -133,6 +133,7 @@ const ShoppingListItem: Component<ShoppingListItemProps> = (props) => {
   return (
     <div
       class={clsx(
+        'shoppinglist-item', // for animation
         'flex flex-row items-center space-x-2 w-full ',
         !props.isLast && 'mb-2',
       )}
