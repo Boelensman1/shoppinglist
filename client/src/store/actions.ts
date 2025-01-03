@@ -11,6 +11,7 @@ import type {
   UpdateListItemCheckedAction,
   UpdateListItemValueAction,
   SyncWithServerAction,
+  ClearListAction,
 } from './types/Action'
 import Action from './types/Action'
 
@@ -19,6 +20,8 @@ export const types = {
   REMOVE_LIST_ITEM: 'REMOVE_LIST_ITEM' as const,
   UPDATE_LIST_ITEM_VALUE: 'UPDATE_LIST_ITEM_VALUE' as const,
   UPDATE_LIST_ITEM_CHECKED: 'UPDATE_LIST_ITEM_CHECKED' as const,
+  CLEAR_LIST: 'CLEAR_LIST' as const,
+  SET_LIST: 'SET_LIST' as const,
 
   UNDO: 'UNDO' as const,
   REDO: 'REDO' as const,
@@ -44,6 +47,9 @@ const actions = {
   removeListItem: (id: string): RemoveListItemAction => ({
     type: types.REMOVE_LIST_ITEM,
     payload: { id },
+  }),
+  clear: (): ClearListAction => ({
+    type: types.CLEAR_LIST,
   }),
   addListItem: (afterId: string, item?: Item): AddListItemAction => {
     return {
@@ -89,6 +95,8 @@ export const isUndoableAction = (action: Action): action is UndoableAction => {
     types.ADD_LIST_ITEM,
     types.UPDATE_LIST_ITEM_VALUE,
     types.UPDATE_LIST_ITEM_CHECKED,
+    types.CLEAR_LIST,
+    types.SET_LIST,
   ].includes((action as UndoableAction).type)
 }
 

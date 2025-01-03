@@ -47,6 +47,19 @@ const reducer = (action: Action, draft: State) => {
       }
       break
     }
+    case types.CLEAR_LIST: {
+      if (!action.redo && !action.fromServer) {
+        const oldList = draft.items
+        draft.undoList.push({
+          type: types.SET_LIST,
+          redo: action,
+          payload: oldList,
+        })
+      }
+
+      draft.items = [{ id: 'INITIAL', value: '', checked: false }]
+      break
+    }
     case types.UPDATE_LIST_ITEM_VALUE: {
       const index = draft.items.findIndex(
         (item) => item.id === action.payload.id,
@@ -120,9 +133,12 @@ const reducer = (action: Action, draft: State) => {
       }
       break
     }
+    case types.SET_LIST: {
+      draft.items = action.payload
+      break
+    }
     case types.INITIAL_FULL_DATA: {
       draft.items = action.payload
-      console.log('items', draft.items)
       draft.loaded = true
       break
     }

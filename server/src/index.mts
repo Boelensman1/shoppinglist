@@ -1,4 +1,4 @@
-import { Model } from 'objection'
+import { Model, Transaction } from 'objection'
 import Knex from 'knex'
 import WebSocket, { WebSocketServer } from 'ws'
 
@@ -18,6 +18,14 @@ const knex = Knex({
 
 Model.knex(knex)
 
+export const insertInitial = (trx?: Transaction) =>
+  ShoppingListEntry.query(trx).insert({
+    id: 'INITIAL',
+    value: '',
+    checked: false,
+    order: Number.MIN_SAFE_INTEGER,
+  })
+
 const init = async () => {
   if (!(await knex.schema.hasTable('shoppingListEntries'))) {
     await knex.schema.createTable('shoppingListEntries', (table) => {
@@ -28,12 +36,7 @@ const init = async () => {
       table.timestamps(true, true, true)
     })
 
-    await ShoppingListEntry.query().insert({
-      id: 'INITIAL',
-      value: '',
-      checked: false,
-      order: Number.MIN_SAFE_INTEGER,
-    })
+    await insertInitial()
   }
 }
 

@@ -15,6 +15,11 @@ export interface RemoveListItemAction extends BaseAction {
   }
 }
 
+export interface ClearListAction extends BaseAction {
+  type: typeof types.CLEAR_LIST
+  redo?: UndoableAction
+}
+
 export interface AddListItemAction extends BaseAction {
   type: typeof types.ADD_LIST_ITEM
   redo?: UndoableAction
@@ -52,6 +57,12 @@ export interface InitialFullDataAction extends BaseAction {
   fromServer: true
 }
 
+export interface SetListAction extends BaseAction {
+  type: typeof types.SET_LIST
+  payload: Item[]
+  redo?: UndoableAction
+}
+
 export interface UndoAction extends BaseAction {
   type: typeof types.UNDO
   payload: Action
@@ -73,6 +84,8 @@ export type UndoableAction =
   | AddListItemAction
   | UpdateListItemValueAction
   | UpdateListItemCheckedAction
+  | ClearListAction
+  | SetListAction
 
 type Action =
   | UndoableAction

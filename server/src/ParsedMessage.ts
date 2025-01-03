@@ -1,3 +1,9 @@
+interface Item {
+  id: string
+  value: string
+  checked: boolean
+}
+
 interface ParsedMessage_syncWithServer {
   type: 'SYNC_WITH_SERVER'
   payload: ParsedMessageUndoable[]
@@ -6,7 +12,7 @@ interface ParsedMessage_addItem {
   type: 'ADD_LIST_ITEM'
   payload: {
     afterId: string
-    item: { id: string; value: string; checked: boolean }
+    item: Item
   }
 }
 interface ParsedMessage_removeItem {
@@ -23,12 +29,21 @@ interface ParsedMessage_updateChecked {
   type: 'UPDATE_LIST_ITEM_CHECKED'
   payload: { id: string; newChecked: boolean }
 }
+interface ParsedMessage_clearList {
+  type: 'CLEAR_LIST'
+}
+interface ParsedMessage_setList {
+  type: 'SET_LIST'
+  payload: Item[]
+}
 
 type ParsedMessageUndoable =
   | ParsedMessage_addItem
   | ParsedMessage_removeItem
   | ParsedMessage_updateValue
   | ParsedMessage_updateChecked
+  | ParsedMessage_clearList
+  | ParsedMessage_setList
 
 type ParsedMessage = ParsedMessageUndoable | ParsedMessage_syncWithServer
 

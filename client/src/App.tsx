@@ -1,30 +1,20 @@
 import clsx from 'clsx'
-import { type Component, For, Show, onMount } from 'solid-js'
+import {
+  type Component,
+  Show,
+  onMount,
+  createSignal,
+  onCleanup,
+} from 'solid-js'
 import { createMediaQuery } from '@solid-primitives/media'
 
-import type Item from './store/types/Item'
-
 import useStore from './store/useStore'
-import ShoppingListItem from './components/ShoppingListItem'
 import WebSocketManager from './WebSocketManager'
-import UndoRedoHandler from './components/UndoRedoHandler'
 import IndexedDbManager from './IndexedDbManager'
 
-interface ShoppingListProps {
-  items: Item[]
-}
-
-const ShoppingList: Component<ShoppingListProps> = (props) => (
-  <For each={props.items}>
-    {(item, i) => (
-      <ShoppingListItem
-        isOnly={props.items.length === 1}
-        isLast={i() === props.items.length - 1}
-        {...item}
-      />
-    )}
-  </For>
-)
+import UndoRedoHandler from './components/UndoRedoHandler'
+import ShoppingList from './components/ShoppingList'
+import actions from './store/actions'
 
 interface AppProps {
   wsm: WebSocketManager
@@ -34,6 +24,7 @@ interface AppProps {
 const App: Component<AppProps> = (props) => {
   const [state, dispatch] = useStore()
   const useMobileLayout = createMediaQuery('(max-width:624px)')
+  const [showButtons, setShowButtons] = createSignal(false)
 
   onMount(() => {
     const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws'
@@ -55,6 +46,38 @@ const App: Component<AppProps> = (props) => {
         payload: items,
         fromServer: true,
       })
+    })
+  })
+
+  onMount(() => {
+    let lastScrollY = 0
+    let hideTimeout: number | undefined
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY
+      const windowHeight = window.innerHeight
+      const documentHeight = document.documentElement.scrollHeight
+
+      // Show buttons when scrolled near bottom, hide when scrolling up
+      const isNearBottom = currentScrollY + windowHeight >= documentHeight - 100
+      const isScrollingDown = currentScrollY > lastScrollY
+
+      if (isNearBottom && isScrollingDown) {
+        setShowButtons(true)
+        // Clear any existing timeout
+        window.clearTimeout(hideTimeout)
+        // Set new timeout to hide buttons after 5 seconds
+        hideTimeout = window.setTimeout(() => {
+          setShowButtons(false)
+        }, 5000)
+      }
+      lastScrollY = currentScrollY
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    onCleanup(() => {
+      window.removeEventListener('scroll', handleScroll)
+      window.clearTimeout(hideTimeout)
     })
   })
 
@@ -89,6 +112,25 @@ const App: Component<AppProps> = (props) => {
         >
           <ShoppingList items={state.items} />
         </div>
+        <Show when={showButtons() || !useMobileLayout()}>
+          <div class="fixed bottom-4 right-4">
+            <button
+              class="bg-red-500 text-white p-2 rounded-full shadow-lg px-4"
+              onClick={() => {
+                if (
+                  window.confirm(
+                    'Are you sure you want to clear the entire list?',
+                  )
+                ) {
+                  dispatch(actions.clear())
+                }
+                setShowButtons(false)
+              }}
+            >
+              Clear list
+            </button>
+          </div>
+        </Show>
         <UndoRedoHandler />
       </Show>
     </div>

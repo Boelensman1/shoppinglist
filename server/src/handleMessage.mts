@@ -4,6 +4,7 @@ import WebSocket from 'ws'
 import ShoppingListEntry from './ShoppingListEntry.mjs'
 import ParsedMessage from './ParsedMessage.js'
 import getOrderForAfterId from './getOrderForAfterId.mjs'
+import { insertInitial } from './index.mjs'
 
 const handleMessage = async (
   ws: WebSocket,
@@ -83,6 +84,32 @@ const handleMessage = async (
               checked: parsedMessage.payload.newChecked,
               order,
             })
+        },
+      )
+
+      return
+
+    case 'CLEAR_LIST':
+      await ShoppingListEntry.transaction(
+        inTransaction ?? ShoppingListEntry.knex(),
+        async (trx) => {
+          await trx.table('shoppingListEntries').truncate()
+          await insertInitial(trx)
+        },
+      )
+
+      return
+
+    case 'SET_LIST':
+      await ShoppingListEntry.transaction(
+        inTransaction ?? ShoppingListEntry.knex(),
+        async (trx) => {
+          await trx.table('shoppingListEntries').truncate()
+          await Promise.all(
+            parsedMessage.payload.map((item) =>
+              ShoppingListEntry.query().insert(item),
+            ),
+          )
         },
       )
 
