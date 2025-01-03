@@ -4,7 +4,7 @@ node_modules: package.json package-lock.json
 	npm ci
 
 dev: node_modules
-	npx vite
+	npx vite --host
 
 dist: node_modules $(SRC_FILES)
 	npx tsc
