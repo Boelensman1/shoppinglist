@@ -50,19 +50,21 @@ const App: Component<AppProps> = (props) => {
   })
 
   onMount(() => {
-    let lastScrollY = 0
+    let touchStartY = 0
+    let touchEndY = 0
+    const minSwipeDistance = 50 // minimum distance for swipe detection
     let hideTimeout: number | undefined
 
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY
-      const windowHeight = window.innerHeight
-      const documentHeight = document.documentElement.scrollHeight
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0].clientY
+    }
 
-      // Show buttons when scrolled near bottom, hide when scrolling up
-      const isNearBottom = currentScrollY + windowHeight >= documentHeight - 100
-      const isScrollingDown = currentScrollY > lastScrollY
+    const handleTouchEnd = (e: TouchEvent) => {
+      touchEndY = e.changedTouches[0].clientY
+      const swipeDistance = touchEndY - touchStartY
 
-      if (isNearBottom && isScrollingDown) {
+      // Detect downward swipe
+      if (swipeDistance < minSwipeDistance) {
         setShowButtons(true)
         // Clear any existing timeout
         window.clearTimeout(hideTimeout)
@@ -71,12 +73,14 @@ const App: Component<AppProps> = (props) => {
           setShowButtons(false)
         }, 5000)
       }
-      lastScrollY = currentScrollY
     }
 
-    window.addEventListener('scroll', handleScroll, { passive: true })
+    window.addEventListener('touchstart', handleTouchStart, { passive: true })
+    window.addEventListener('touchend', handleTouchEnd, { passive: true })
+
     onCleanup(() => {
-      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('touchstart', handleTouchStart)
+      window.removeEventListener('touchend', handleTouchEnd)
       window.clearTimeout(hideTimeout)
     })
   })
