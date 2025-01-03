@@ -123,6 +123,7 @@ const App: Component<AppProps> = (props) => {
                   )
                 ) {
                   dispatch(actions.clear())
+                  window.scrollTo({ top: 0 })
                 }
                 setShowButtons(false)
               }}
