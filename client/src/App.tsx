@@ -68,10 +68,10 @@ const App: Component<AppProps> = (props) => {
         setShowButtons(true)
         // Clear any existing timeout
         window.clearTimeout(hideTimeout)
-        // Set new timeout to hide buttons after 5 seconds
+        // Set new timeout to hide buttons after 2 seconds
         hideTimeout = window.setTimeout(() => {
           setShowButtons(false)
-        }, 5000)
+        }, 2000)
       }
     }
 
