@@ -52,7 +52,7 @@ const App: Component<AppProps> = (props) => {
   onMount(() => {
     let touchStartY = 0
     let touchEndY = 0
-    const minSwipeDistance = 50 // minimum distance for swipe detection
+    const minSwipeDistance = 100 // minimum distance for swipe detection
     let hideTimeout: number | undefined
 
     const handleTouchStart = (e: TouchEvent) => {
@@ -64,7 +64,7 @@ const App: Component<AppProps> = (props) => {
       const swipeDistance = touchEndY - touchStartY
 
       // Detect downward swipe
-      if (swipeDistance < minSwipeDistance) {
+      if (swipeDistance > minSwipeDistance) {
         setShowButtons(true)
         // Clear any existing timeout
         window.clearTimeout(hideTimeout)

@@ -8,7 +8,7 @@ const UndoRedoHandler: Component = () => {
   let touchStartX = 0
 
   onMount(() => {
-    const handleUndoRedo = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'z' && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
         e.preventDefault()
         undo()
@@ -24,7 +24,7 @@ const UndoRedoHandler: Component = () => {
       }
     }
 
-    document.addEventListener('keydown', handleUndoRedo)
+    document.addEventListener('keydown', handleKeyDown)
 
     const handleTouchStart = (e: TouchEvent) => {
       touchStartX = e.touches[0].clientX
@@ -33,13 +33,15 @@ const UndoRedoHandler: Component = () => {
     const handleTouchEnd = (e: TouchEvent) => {
       const touchEndX = e.changedTouches[0].clientX
       const swipeDistance = touchEndX - touchStartX
-      const minSwipeDistance = 50 // minimum pixels to trigger swipe
+      const minSwipeDistance = 100
 
       if (Math.abs(swipeDistance) >= minSwipeDistance) {
         if (swipeDistance < 0) {
+          console.log('undo')
           // Left swipe
           undo()
         } else {
+          console.log('redo')
           // Right swipe
           redo()
         }
@@ -50,7 +52,7 @@ const UndoRedoHandler: Component = () => {
     document.addEventListener('touchend', handleTouchEnd)
 
     return () => {
-      document.removeEventListener('keydown', handleUndoRedo)
+      document.removeEventListener('keydown', handleKeyDown)
       document.removeEventListener('touchstart', handleTouchStart)
       document.removeEventListener('touchend', handleTouchEnd)
     }
