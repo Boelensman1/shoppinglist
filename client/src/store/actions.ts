@@ -1,5 +1,5 @@
 import Item from './types/Item'
-
+import useStore from './useStore'
 import randomString from '../utils/randomString'
 import type {
   AddListItemAction,
@@ -12,6 +12,7 @@ import type {
   UpdateListItemValueAction,
   SyncWithServerAction,
   ClearListAction,
+  BatchAction,
 } from './types/Action'
 import Action from './types/Action'
 
@@ -22,6 +23,7 @@ export const types = {
   UPDATE_LIST_ITEM_CHECKED: 'UPDATE_LIST_ITEM_CHECKED' as const,
   CLEAR_LIST: 'CLEAR_LIST' as const,
   SET_LIST: 'SET_LIST' as const,
+  BATCH: 'BATCH' as const,
 
   UNDO: 'UNDO' as const,
   REDO: 'REDO' as const,
@@ -51,6 +53,34 @@ const actions = {
   clear: (): ClearListAction => ({
     type: types.CLEAR_LIST,
   }),
+  clearCheckedItems: (): BatchAction | ClearListAction => {
+    const [state] = useStore()
+    const checkedItemIds = state.items
+      .filter((item: Item) => item.checked)
+      .map((item: Item) => item.id)
+
+    // If all items are checked, fire the clear action
+    if (checkedItemIds.length === state.items.length) {
+      return {
+        type: types.CLEAR_LIST,
+      }
+    }
+
+    const batchActions: UndoableAction[] = []
+
+    // Remove all checked items
+    batchActions.push(
+      ...checkedItemIds.map((id: string) => ({
+        type: types.REMOVE_LIST_ITEM,
+        payload: { id },
+      })),
+    )
+
+    return {
+      type: types.BATCH,
+      payload: batchActions,
+    }
+  },
   addListItem: (afterId: string, item?: Item): AddListItemAction => {
     return {
       type: types.ADD_LIST_ITEM,
@@ -97,6 +127,7 @@ export const isUndoableAction = (action: Action): action is UndoableAction => {
     types.UPDATE_LIST_ITEM_CHECKED,
     types.CLEAR_LIST,
     types.SET_LIST,
+    types.BATCH,
   ].includes((action as UndoableAction).type)
 }
 

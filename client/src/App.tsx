@@ -117,7 +117,23 @@ const App: Component<AppProps> = (props) => {
           <ShoppingList items={state.items} />
         </div>
         <Show when={showButtons() || !useMobileLayout()}>
-          <div class="fixed bottom-4 right-4">
+          <div class="fixed bottom-4 right-4 flex gap-2">
+            <button
+              class="bg-blue-500 text-white p-2 rounded-full shadow-lg px-4"
+              onClick={() => {
+                if (
+                  window.confirm(
+                    'Are you sure you want to clear all checked items?',
+                  )
+                ) {
+                  dispatch(actions.clearCheckedItems())
+                  window.scrollTo({ top: 0 })
+                }
+                setShowButtons(false)
+              }}
+            >
+              Clear checked
+            </button>
             <button
               class="bg-red-500 text-white p-2 rounded-full shadow-lg px-4"
               onClick={() => {

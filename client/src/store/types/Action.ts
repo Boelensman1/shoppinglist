@@ -65,18 +65,24 @@ export interface SetListAction extends BaseAction {
 
 export interface UndoAction extends BaseAction {
   type: typeof types.UNDO
-  payload: Action
+  payload: UndoableAction
 }
 
 export interface RedoAction extends BaseAction {
   type: typeof types.REDO
-  payload: Action
+  payload: UndoableAction
 }
 
 export interface WebsocketConnectionStateChangedAction extends BaseAction {
   type: typeof types.WEBSOCKET_CONNECTIONSTATE_CHANGED
   payload: State['webSocketState']
   private: true
+}
+
+export interface BatchAction extends BaseAction {
+  type: typeof types.BATCH
+  redo?: UndoableAction
+  payload: UndoableAction[]
 }
 
 export type MergeableUndoableAction =
@@ -89,6 +95,7 @@ export type UndoableAction =
   | MergeableUndoableAction
   | ClearListAction
   | SetListAction
+  | BatchAction
 
 type Action =
   | UndoableAction

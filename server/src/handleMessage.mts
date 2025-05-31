@@ -11,10 +11,8 @@ const handleMessage = async (
   parsedMessage: ParsedMessage,
   inTransaction?: Objection.Transaction,
 ) => {
-  // console.log(parsedMessage)
   switch (parsedMessage.type) {
     case 'SYNC_WITH_SERVER': {
-      console.log(parsedMessage.payload)
       // handle offline messages
       for (const offlineMessage of parsedMessage.payload) {
         await ShoppingListEntry.transaction(async (trx) => {
@@ -87,6 +85,19 @@ const handleMessage = async (
         },
       )
 
+      return
+
+    case 'BATCH':
+      await ShoppingListEntry.transaction(
+        inTransaction ?? ShoppingListEntry.knex(),
+        async (trx) => {
+          await Promise.all(
+            parsedMessage.payload.map((message) =>
+              handleMessage(ws, message, trx),
+            ),
+          )
+        },
+      )
       return
 
     case 'CLEAR_LIST':

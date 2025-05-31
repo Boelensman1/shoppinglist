@@ -10,9 +10,8 @@ interface ParsedMessage_syncWithServer {
 }
 interface ParsedMessage_addItem {
   type: 'ADD_LIST_ITEM'
-  payload: {
+  payload: Item & {
     afterId: string
-    item: Item
   }
 }
 interface ParsedMessage_removeItem {
@@ -36,6 +35,10 @@ interface ParsedMessage_setList {
   type: 'SET_LIST'
   payload: Item[]
 }
+interface ParsedMessage_batch {
+  type: 'BATCH'
+  payload: ParsedMessageUndoable[]
+}
 
 type ParsedMessageUndoable =
   | ParsedMessage_addItem
@@ -44,6 +47,7 @@ type ParsedMessageUndoable =
   | ParsedMessage_updateChecked
   | ParsedMessage_clearList
   | ParsedMessage_setList
+  | ParsedMessage_batch
 
 type ParsedMessage = ParsedMessageUndoable | ParsedMessage_syncWithServer
 

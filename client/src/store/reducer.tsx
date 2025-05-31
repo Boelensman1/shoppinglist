@@ -2,9 +2,33 @@ import type State from './types/State'
 import type Action from './types/Action'
 
 import { types } from './actions'
+import { UndoableAction } from './types/Action'
+import { mergeActionsQueue } from '../utils/mergeActionsQueue'
 
-const reducer = (action: Action, draft: State) => {
+const reducer = (
+  action: Action,
+  draft: State,
+  seperateUndoList?: UndoableAction[],
+) => {
+  const undoList = seperateUndoList ?? draft.undoList
+
   switch (action.type) {
+    case types.BATCH: {
+      const batchUndoList: UndoableAction[] = []
+      // Execute each action in the batch
+      action.payload.forEach((batchAction) => {
+        reducer(batchAction, draft, batchUndoList)
+      })
+
+      if (!action.redo && !action.fromServer) {
+        undoList.push({
+          type: types.BATCH,
+          redo: action,
+          payload: mergeActionsQueue(batchUndoList).reverse(),
+        })
+      }
+      break
+    }
     case types.ADD_LIST_ITEM: {
       const { afterId, ...item } = action.payload
       const afterIndex = draft.items.findIndex((item) => item.id === afterId)
@@ -13,7 +37,7 @@ const reducer = (action: Action, draft: State) => {
       draft.focusTargetId = item.id
 
       if (!action.redo && !action.fromServer) {
-        draft.undoList.push({
+        undoList.push({
           type: types.REMOVE_LIST_ITEM,
           redo: action,
           payload: { id: item.id },
@@ -28,7 +52,7 @@ const reducer = (action: Action, draft: State) => {
       const [deletedItem] = draft.items.splice(index, 1)
 
       if (!action.redo && !action.fromServer) {
-        draft.undoList.push({
+        undoList.push({
           type: types.ADD_LIST_ITEM,
           redo: action,
           payload: {
@@ -50,7 +74,7 @@ const reducer = (action: Action, draft: State) => {
     case types.CLEAR_LIST: {
       if (!action.redo && !action.fromServer) {
         const oldList = draft.items
-        draft.undoList.push({
+        undoList.push({
           type: types.SET_LIST,
           redo: action,
           payload: oldList,
@@ -67,7 +91,7 @@ const reducer = (action: Action, draft: State) => {
 
       if (!action.redo && !action.fromServer) {
         const oldValue = draft.items[index].value
-        draft.undoList.push({
+        undoList.push({
           type: types.UPDATE_LIST_ITEM_VALUE,
           redo: action,
           payload: { id: action.payload.id, newValue: oldValue },
@@ -92,7 +116,7 @@ const reducer = (action: Action, draft: State) => {
 
       if (!action.redo && !action.fromServer) {
         const oldChecked = draft.items[index].checked
-        draft.undoList.push({
+        undoList.push({
           type: types.UPDATE_LIST_ITEM_CHECKED,
           redo: action,
           payload: { id: action.payload.id, newChecked: oldChecked },
@@ -143,14 +167,18 @@ const reducer = (action: Action, draft: State) => {
       break
     }
     case types.UNDO: {
-      const undoActionDone = draft.undoList.pop()
-      if (undoActionDone) {
-        draft.redoList.push(undoActionDone.redo!)
-      }
+      const index = draft.undoList.indexOf(action.payload)
+      draft.undoList.splice(index, 1)
+
+      reducer(action.payload, draft, undoList)
+      draft.redoList.push(action.payload.redo!)
       break
     }
     case types.REDO: {
-      draft.redoList.pop()
+      const index = draft.redoList.indexOf(action.payload)
+      draft.redoList.splice(index, 1)
+
+      reducer(action.payload, draft, undoList)
       break
     }
 

@@ -37,11 +37,9 @@ const UndoRedoHandler: Component = () => {
 
       if (Math.abs(swipeDistance) >= minSwipeDistance) {
         if (swipeDistance < 0) {
-          console.log('undo')
           // Left swipe
           undo()
         } else {
-          console.log('redo')
           // Right swipe
           redo()
         }
@@ -62,14 +60,12 @@ const UndoRedoHandler: Component = () => {
     const actionToUndo = undoList[undoList.length - 1]
     if (actionToUndo) {
       dispatch(actions.undo(actionToUndo))
-      dispatch(actionToUndo)
     }
   }
   const redo = () => {
     const actionToRedo = redoList[redoList.length - 1]
     if (actionToRedo) {
       dispatch(actions.redo(actionToRedo))
-      dispatch(actionToRedo)
     }
   }
 

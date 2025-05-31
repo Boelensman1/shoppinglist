@@ -10,6 +10,7 @@ const parsePasteLineValue = (line: string) => {
   let parsedLine = line.trim()
   parsedLine = parsedLine.replace(/^- \[[ x ]\]/, '')
   parsedLine = parsedLine.replace('^-', '')
+  parsedLine = parsedLine.replace('^▢', '')
   return parsedLine.trim()
 }
 const parsePasteLineChecked = (line: string) => {
