@@ -36,6 +36,7 @@ const UndoRedoHandler: Component = () => {
       const minSwipeDistance = 100
 
       if (Math.abs(swipeDistance) >= minSwipeDistance) {
+        e.preventDefault()
         if (swipeDistance < 0) {
           // Left swipe
           undo()

@@ -65,6 +65,7 @@ const App: Component<AppProps> = (props) => {
 
       // Detect downward swipe
       if (swipeDistance > minSwipeDistance) {
+        e.preventDefault()
         setShowButtons(true)
         // Clear any existing timeout
         window.clearTimeout(hideTimeout)
