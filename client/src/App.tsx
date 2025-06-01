@@ -12,7 +12,7 @@ import useStore from './store/useStore'
 import WebSocketManager from './WebSocketManager'
 import IndexedDbManager from './IndexedDbManager'
 
-import UndoRedoHandler from './components/UndoRedoHandler'
+import UndoRedoHandler, { getUndoRedoStore } from './components/UndoRedoHandler'
 import ShoppingList from './components/ShoppingList'
 import actions from './store/actions'
 
@@ -49,40 +49,17 @@ const App: Component<AppProps> = (props) => {
     })
   })
 
+  // Sync with server when page gains focus
   onMount(() => {
-    let touchStartY = 0
-    let touchEndY = 0
-    const minSwipeDistance = 100 // minimum distance for swipe detection
-    let hideTimeout: number | undefined
-
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartY = e.touches[0].clientY
-    }
-
-    const handleTouchEnd = (e: TouchEvent) => {
-      touchEndY = e.changedTouches[0].clientY
-      const swipeDistance = touchEndY - touchStartY
-
-      // Detect downward swipe
-      if (swipeDistance > minSwipeDistance) {
-        e.preventDefault()
-        setShowButtons(true)
-        // Clear any existing timeout
-        window.clearTimeout(hideTimeout)
-        // Set new timeout to hide buttons after 2 seconds
-        hideTimeout = window.setTimeout(() => {
-          setShowButtons(false)
-        }, 2000)
+    const handleFocus = () => {
+      if (state.webSocketState === 'connected') {
+        props.wsm.sendMessage(actions.syncWithServer([]), false)
       }
     }
 
-    window.addEventListener('touchstart', handleTouchStart, { passive: true })
-    window.addEventListener('touchend', handleTouchEnd, { passive: true })
-
+    window.addEventListener('focus', handleFocus)
     onCleanup(() => {
-      window.removeEventListener('touchstart', handleTouchStart)
-      window.removeEventListener('touchend', handleTouchEnd)
-      window.clearTimeout(hideTimeout)
+      window.removeEventListener('focus', handleFocus)
     })
   })
 
@@ -117,19 +94,74 @@ const App: Component<AppProps> = (props) => {
         >
           <ShoppingList items={state.items} />
         </div>
+        <Show when={useMobileLayout() && !showButtons()}>
+          <button
+            class="fixed bottom-4 right-4 bg-gray-500 text-white p-2 rounded-full shadow-lg w-12 h-12 flex items-center justify-center"
+            onClick={() => setShowButtons(!showButtons())}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+        </Show>
         <Show when={showButtons() || !useMobileLayout()}>
-          <div class="fixed bottom-4 right-4 flex gap-2">
+          <div
+            class={clsx(
+              'fixed bottom-4 right-4 flex gap-2',
+              useMobileLayout() && 'flex-col items-end',
+            )}
+          >
+            <Show when={useMobileLayout()}>
+              <button
+                class="bg-gray-500 text-white p-2 rounded-full shadow-lg w-12 h-12 flex items-center justify-center mb-2"
+                onClick={() => setShowButtons(false)}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+              <button
+                class="bg-gray-500 text-white p-2 rounded-full shadow-lg px-4 disabled:opacity-50"
+                onClick={() => getUndoRedoStore()?.undo()}
+                disabled={state.undoList.length === 0}
+              >
+                Undo
+              </button>
+              <button
+                class="bg-gray-500 text-white p-2 rounded-full shadow-lg px-4 disabled:opacity-50"
+                onClick={() => getUndoRedoStore()?.redo()}
+                disabled={state.redoList.length === 0}
+              >
+                Redo
+              </button>
+            </Show>
             <button
               class="bg-blue-500 text-white p-2 rounded-full shadow-lg px-4"
               onClick={() => {
-                if (
-                  window.confirm(
-                    'Are you sure you want to clear all checked items?',
-                  )
-                ) {
-                  dispatch(actions.clearCheckedItems())
-                  window.scrollTo({ top: 0 })
-                }
+                dispatch(actions.clearCheckedItems())
+                window.scrollTo({ top: 0 })
                 setShowButtons(false)
               }}
             >
@@ -138,14 +170,8 @@ const App: Component<AppProps> = (props) => {
             <button
               class="bg-red-500 text-white p-2 rounded-full shadow-lg px-4"
               onClick={() => {
-                if (
-                  window.confirm(
-                    'Are you sure you want to clear the entire list?',
-                  )
-                ) {
-                  dispatch(actions.clear())
-                  window.scrollTo({ top: 0 })
-                }
+                dispatch(actions.clear())
+                window.scrollTo({ top: 0 })
                 setShowButtons(false)
               }}
             >

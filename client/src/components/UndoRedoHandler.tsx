@@ -1,13 +1,37 @@
-import { type Component, onMount } from 'solid-js'
+import { type Component, onMount, createSignal } from 'solid-js'
 
 import useStore from '../store/useStore'
 import actions from '../store/actions'
 
+// Create a store for undo/redo functions
+const [undoRedoStore, setUndoRedoStore] = createSignal<{
+  undo: () => void
+  redo: () => void
+} | null>(null)
+
+export const getUndoRedoStore = () => undoRedoStore()
+
 const UndoRedoHandler: Component = () => {
   const [{ undoList, redoList }, dispatch] = useStore()
-  let touchStartX = 0
+
+  const undo = () => {
+    const actionToUndo = undoList[undoList.length - 1]
+    if (actionToUndo) {
+      dispatch(actions.undo(actionToUndo))
+    }
+  }
+
+  const redo = () => {
+    const actionToRedo = redoList[redoList.length - 1]
+    if (actionToRedo) {
+      dispatch(actions.redo(actionToRedo))
+    }
+  }
 
   onMount(() => {
+    // Expose the functions through the store
+    setUndoRedoStore({ undo, redo })
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'z' && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
         e.preventDefault()
@@ -26,49 +50,11 @@ const UndoRedoHandler: Component = () => {
 
     document.addEventListener('keydown', handleKeyDown)
 
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartX = e.touches[0].clientX
-    }
-
-    const handleTouchEnd = (e: TouchEvent) => {
-      const touchEndX = e.changedTouches[0].clientX
-      const swipeDistance = touchEndX - touchStartX
-      const minSwipeDistance = 100
-
-      if (Math.abs(swipeDistance) >= minSwipeDistance) {
-        e.preventDefault()
-        if (swipeDistance < 0) {
-          // Left swipe
-          undo()
-        } else {
-          // Right swipe
-          redo()
-        }
-      }
-    }
-
-    document.addEventListener('touchstart', handleTouchStart)
-    document.addEventListener('touchend', handleTouchEnd)
-
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
-      document.removeEventListener('touchstart', handleTouchStart)
-      document.removeEventListener('touchend', handleTouchEnd)
+      setUndoRedoStore(null)
     }
   })
-
-  const undo = () => {
-    const actionToUndo = undoList[undoList.length - 1]
-    if (actionToUndo) {
-      dispatch(actions.undo(actionToUndo))
-    }
-  }
-  const redo = () => {
-    const actionToRedo = redoList[redoList.length - 1]
-    if (actionToRedo) {
-      dispatch(actions.redo(actionToRedo))
-    }
-  }
 
   return null
 }
