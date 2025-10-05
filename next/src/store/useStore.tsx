@@ -92,7 +92,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
 
     if (state.webSocketState === 'connected') {
       setFocusEventHandled(true)
-      // wsmRef.current.sendMessage(actions.syncWithServer([]), false)
+      wsmRef.current.sendMessage(actions.syncWithServer([]), false)
     }
   }, [state.webSocketState, focusEventHandled])
 
