@@ -42,10 +42,16 @@ class PushNotificationManager {
     if (!this.dispatch) {
       return
     }
-    this.registration = await navigator.serviceWorker.register('/sw.js', {
-      scope: '/',
-      updateViaCache: 'none',
-    })
+    try {
+      this.registration = await navigator.serviceWorker.register('/sw.js', {
+        scope: '/',
+        updateViaCache: 'none',
+      })
+    } catch (error) {
+      console.error('Service worker registration failed:', error)
+      this.dispatch(actions.updateHasPushSubscription(false))
+      return
+    }
 
     const sub = await this.registration.pushManager.getSubscription()
     this.dispatch(actions.updateHasPushSubscription(Boolean(sub)))

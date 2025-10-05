@@ -88,6 +88,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
           type: 'INITIAL_FULL_DATA',
           payload: pendingItems,
           fromUser: false,
+          fromIdbm: true,
         })
       } else {
         // No notification, load from IndexedDB as usual

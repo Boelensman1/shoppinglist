@@ -22,6 +22,7 @@ export default function ActionButtons({
 }: ActionButtonsProps) {
   const { dispatch, state, pushSubRef } = useStore()
   const [showButtons, setShowButtons] = useState(false)
+  const [signalSent, setSignalSent] = useState(false)
 
   return (
     <>
@@ -107,12 +108,22 @@ export default function ActionButtons({
             </button>
           )}
           <button
-            className="bg-green-500 text-white p-2 rounded-full shadow-lg px-4"
+            className={clsx(
+              'text-white p-2 rounded-full shadow-lg px-4 transition-colors',
+              signalSent
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-green-500 hover:bg-green-600',
+            )}
             onClick={() => {
-              dispatch(actions.signalFinishedShoppingList(state.userId))
+              if (!signalSent) {
+                dispatch(actions.signalFinishedShoppingList(state.userId))
+                setSignalSent(true)
+                setTimeout(() => setSignalSent(false), 3000)
+              }
             }}
+            disabled={signalSent}
           >
-            Signal shopping list finished
+            {signalSent ? '✓ Signal sent!' : 'Signal shopping list finished'}
           </button>
           <button
             className="bg-blue-500 text-white p-2 rounded-full shadow-lg px-4"
