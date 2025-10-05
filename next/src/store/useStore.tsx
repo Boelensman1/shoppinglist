@@ -63,7 +63,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     // Set timeout for websocket to connect (this is the time the loading animtation plays before we give up)
     const tId = setTimeout(() => {
       dispatch(actions.websocketConnectionTimeoutExceeded())
-    }, 5000)
+    }, 2000)
     return () => clearTimeout(tId)
   }, [dispatch])
 

@@ -1,6 +1,6 @@
 async function storeNotificationData(items) {
   return new Promise((resolve, reject) => {
-    const request = self.indexedDB.open('ItemsDb', 3)
+    const request = self.indexedDB.open('ShoppinglistDB', 1)
 
     request.onerror = () => reject(request.error)
     request.onsuccess = () => {

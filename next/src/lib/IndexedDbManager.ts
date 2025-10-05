@@ -6,7 +6,7 @@ class IndexedDbManager {
 
   async init() {
     return new Promise((resolve, reject) => {
-      const request = window.indexedDB.open('ItemsDb', 3)
+      const request = window.indexedDB.open('ShoppinglistDB', 1)
       request.onerror = (event) => {
         const target = event.target as IDBOpenDBRequest
         console.error(event)
@@ -32,8 +32,6 @@ class IndexedDbManager {
         if (!db.objectStoreNames.contains('pendingNotifications')) {
           db.createObjectStore('pendingNotifications', { keyPath: 'id' })
         }
-        this.db = db
-        resolve(true)
       }
     })
   }
