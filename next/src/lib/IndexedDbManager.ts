@@ -1,11 +1,12 @@
-import { State } from '@/types/store/State'
+import type { Item } from '@/types/store/Item'
+import type { State } from '@/types/store/State'
 
 class IndexedDbManager {
   db: IDBDatabase | null = null
 
   async init() {
     return new Promise((resolve, reject) => {
-      const request = window.indexedDB.open('ItemsDb', 2)
+      const request = window.indexedDB.open('ItemsDb', 3)
       request.onerror = (event) => {
         const target = event.target as IDBOpenDBRequest
         console.error(event)
@@ -27,6 +28,9 @@ class IndexedDbManager {
         }
         if (!db.objectStoreNames.contains('settings')) {
           db.createObjectStore('settings', { keyPath: 'key' })
+        }
+        if (!db.objectStoreNames.contains('pendingNotifications')) {
+          db.createObjectStore('pendingNotifications', { keyPath: 'id' })
         }
         this.db = db
         resolve(true)
@@ -129,6 +133,63 @@ class IndexedDbManager {
         } else {
           resolve(null)
         }
+      }
+    })
+  }
+
+  async getPendingNotification(): Promise<Item[] | null> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        console.error('Db has not been initialised')
+        reject(new Error('Db has not been initialised'))
+        return
+      }
+      const transaction = this.db.transaction(
+        ['pendingNotifications'],
+        'readonly',
+      )
+      const objectStore = transaction.objectStore('pendingNotifications')
+      const request = objectStore.get('latest')
+      request.onerror = (event) => {
+        console.error(event)
+        const target = event.target as IDBOpenDBRequest
+        reject(target.error)
+      }
+      request.onsuccess = (event) => {
+        const target = event.target as IDBRequest<{
+          id: string
+          items: Item[]
+          timestamp: number
+        }>
+        if (target.result) {
+          resolve(target.result.items)
+        } else {
+          resolve(null)
+        }
+      }
+    })
+  }
+
+  async clearPendingNotification(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        console.error('Db has not been initialised')
+        reject(new Error('Db has not been initialised'))
+        return
+      }
+      const transaction = this.db.transaction(
+        ['pendingNotifications'],
+        'readwrite',
+      )
+      const objectStore = transaction.objectStore('pendingNotifications')
+      const request = objectStore.delete('latest')
+      request.onsuccess = () => {
+        resolve()
+      }
+      request.onerror = (event) => {
+        console.error(event)
+        const target = event.target as IDBOpenDBRequest
+        reject(target.error)
       }
     })
   }

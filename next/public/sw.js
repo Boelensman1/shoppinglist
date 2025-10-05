@@ -1,3 +1,23 @@
+async function storeNotificationData(items) {
+  return new Promise((resolve, reject) => {
+    const request = self.indexedDB.open('ItemsDb', 3)
+
+    request.onerror = () => reject(request.error)
+    request.onsuccess = () => {
+      const db = request.result
+      if (!db.objectStoreNames.contains('pendingNotifications')) {
+        resolve() // Store doesn't exist yet, skip
+        return
+      }
+      const transaction = db.transaction(['pendingNotifications'], 'readwrite')
+      const store = transaction.objectStore('pendingNotifications')
+      store.put({ id: 'latest', items, timestamp: Date.now() })
+      transaction.oncomplete = () => resolve()
+      transaction.onerror = () => reject(transaction.error)
+    }
+  })
+}
+
 self.addEventListener('push', function (event) {
   if (event.data) {
     const data = event.data.json()
@@ -6,12 +26,20 @@ self.addEventListener('push', function (event) {
       icon: data.icon || '/icon.png',
       badge: '/badge.png',
       vibrate: [100, 50, 100],
-      data: {
+      data: data.data || {
         dateOfArrival: Date.now(),
         primaryKey: '2',
       },
     }
-    event.waitUntil(self.registration.showNotification(data.title, options))
+
+    const tasks = [self.registration.showNotification(data.title, options)]
+
+    // Store notification data in IndexedDB for when app is reopened
+    if (data.data?.items) {
+      tasks.push(storeNotificationData(data.data.items).catch(() => {}))
+    }
+
+    event.waitUntil(Promise.all(tasks))
   }
 })
 

@@ -79,13 +79,26 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
 
       await pushSubRef.current.initialize(dispatch, userId)
 
-      const items = await idbmRef.current.getItems()
-      dispatch({
-        type: 'INITIAL_FULL_DATA',
-        payload: Object.values(items),
-        fromUser: false,
-        fromIdbm: true,
-      })
+      // Check for pending notification data first
+      const pendingItems = await idbmRef.current.getPendingNotification()
+      if (pendingItems) {
+        // Use notification data and clear it
+        await idbmRef.current.clearPendingNotification()
+        dispatch({
+          type: 'INITIAL_FULL_DATA',
+          payload: pendingItems,
+          fromUser: false,
+        })
+      } else {
+        // No notification, load from IndexedDB as usual
+        const items = await idbmRef.current.getItems()
+        dispatch({
+          type: 'INITIAL_FULL_DATA',
+          payload: Object.values(items),
+          fromUser: false,
+          fromIdbm: true,
+        })
+      }
     })
   }, [dispatch])
 
