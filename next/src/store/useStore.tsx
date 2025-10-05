@@ -49,7 +49,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     const basePath = window.location.pathname.replace(/\/$/, '')
     const wsUrl = window.location.host.startsWith('localhost')
       ? 'ws://127.0.0.1:1222'
-      : `${wsScheme}://${window.location.host}/${basePath}/ws`
+      : `${wsScheme}://${window.location.host}/${basePath ? basePath + '/' : ''}ws/`
 
     // Connect to WebSocket and pass the dispatch function
     wsmRef.current.connect(wsUrl, dispatch)
