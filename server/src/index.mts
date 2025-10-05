@@ -19,20 +19,25 @@ const knex = Knex({
 Model.knex(knex)
 
 export const insertInitial = (trx?: Transaction) =>
-  ShoppingListEntry.query(trx).insert({
-    id: 'INITIAL',
-    value: '',
-    checked: false,
-    order: Number.MIN_SAFE_INTEGER,
-  })
+  ShoppingListEntry.query(trx)
+    .insert({
+      id: 'INITIAL',
+      value: '',
+      checked: false,
+      deleted: false,
+      prevItemId: 'HEAD',
+    })
+    .onConflict('id')
+    .ignore()
 
 const init = async () => {
   if (!(await knex.schema.hasTable('shoppingListEntries'))) {
     await knex.schema.createTable('shoppingListEntries', (table) => {
       table.string('id').primary()
-      table.integer('order').unique().notNullable()
+      table.string('prevItemId').notNullable()
       table.string('value').notNullable()
       table.boolean('checked').notNullable()
+      table.boolean('deleted').notNullable()
       table.timestamps(true, true, true)
     })
 

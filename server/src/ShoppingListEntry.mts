@@ -4,7 +4,8 @@ class ShoppingListEntry extends Model {
   id!: string
   value!: string
   checked!: boolean
-  order!: number
+  prevItemId!: string
+  deleted!: boolean
   createdAt!: string
   updatedAt?: string
 
@@ -17,19 +18,23 @@ class ShoppingListEntry extends Model {
     if (json.checked !== undefined) {
       json.checked = Boolean(json.checked)
     }
+    if (json.deleted !== undefined) {
+      json.deleted = Boolean(json.deleted)
+    }
     return json
   }
 
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['id', 'value', 'checked'],
+      required: ['id', 'value', 'checked', 'deleted', 'prevItemId'],
 
       properties: {
         id: { type: 'string' },
         value: { type: 'string' },
         checked: { type: 'boolean' },
-        order: { type: 'number' },
+        deleted: { type: 'boolean' },
+        prevItemId: { type: 'string' },
         createdAt: { type: 'string', format: 'date-time' },
         updatedAt: { type: ['string', 'null'], format: 'date-time' },
       },
