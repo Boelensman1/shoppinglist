@@ -12,7 +12,7 @@ import { isLoaded } from '@/store/utils'
 import { itemsToList } from '@/utils/itemsToList'
 
 export default function App() {
-  const { state, dispatch } = useStore()
+  const { state } = useStore()
   const useMobileLayout = useMediaQuery('(max-width:624px)')
 
   return (
@@ -47,7 +47,6 @@ export default function App() {
             undoListLength={state.undoList.length}
             redoListLength={state.redoList.length}
             useMobileLayout={useMobileLayout}
-            dispatch={dispatch}
           />
           <UndoRedoHandler />
         </>

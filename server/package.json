@@ -13,6 +13,7 @@
   "devDependencies": {
     "@tsconfig/node20": "^20.1.4",
     "@types/node": "^20.12.6",
+    "@types/web-push": "^3.6.4",
     "@types/ws": "^8.5.13",
     "prettier": "^3.4.2",
     "tsx": "^4.19.2",
@@ -20,7 +21,9 @@
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",
+    "dotenv": "^17.2.3",
     "objection": "^3.1.5",
+    "web-push": "^3.6.7",
     "ws": "^8.18.0"
   }
 }

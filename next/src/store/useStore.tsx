@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react'
 import { useImmerReducer } from 'use-immer'
+import { v4 as genUuidv4 } from 'uuid'
 
 import { State } from '../types/store/State'
 import { Action } from '../types/store/Action'
@@ -16,6 +17,7 @@ import initial from './initial'
 import { combinedReducer } from './combinedReducer'
 import WebSocketManager from '../lib/WebSocketManager'
 import IndexedDbManager from '../lib/IndexedDbManager'
+import PushNotificationManager from '../lib/PushNotificationManager'
 import actions from './actions'
 
 interface StoreContextValue {
@@ -23,6 +25,7 @@ interface StoreContextValue {
   dispatch: (action: Action) => void
   wsm: WebSocketManager
   idbm: IndexedDbManager
+  pushSubRef: PushNotificationManager
 }
 
 const StoreContext = createContext<StoreContextValue | undefined>(undefined)
@@ -39,6 +42,9 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [focusEventHandled, setFocusEventHandled] = useState(false)
   const wsmRef = useRef<WebSocketManager>(new WebSocketManager())
   const idbmRef = useRef<IndexedDbManager>(new IndexedDbManager())
+  const pushSubRef = useRef<PushNotificationManager>(
+    new PushNotificationManager(),
+  )
   const [state, dispatch] = useImmerReducer(
     combinedReducer(wsmRef.current, idbmRef.current),
     initial,
@@ -63,6 +69,16 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     idbmRef.current.init().then(async () => {
+      let userId = await idbmRef.current.getUserId()
+      if (!userId) {
+        // no userId yet, generate one!
+        userId = genUuidv4()
+        await idbmRef.current.saveUserId(userId)
+      }
+      dispatch(actions.updateUserId(userId))
+
+      await pushSubRef.current.initialize(dispatch, userId)
+
       const items = await idbmRef.current.getItems()
       dispatch({
         type: 'INITIAL_FULL_DATA',
@@ -98,7 +114,13 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <StoreContext.Provider
-      value={{ state, dispatch, wsm: wsmRef.current, idbm: idbmRef.current }}
+      value={{
+        state,
+        dispatch,
+        wsm: wsmRef.current,
+        idbm: idbmRef.current,
+        pushSubRef: pushSubRef.current,
+      }}
     >
       {children}
     </StoreContext.Provider>

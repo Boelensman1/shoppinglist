@@ -1,6 +1,7 @@
 import { State } from '../types/store/State'
 
 const initial: State = {
+  userId: '',
   items: {},
   focusTargetId: null,
   idbmLoaded: false,
@@ -8,6 +9,8 @@ const initial: State = {
   undoList: [],
   redoList: [],
   webSocketState: 'disconnected',
+  hasPushNotificationsSubscription: false,
+  canEnablePushNotifications: false,
 }
 
 export default initial

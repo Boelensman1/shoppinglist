@@ -154,6 +154,21 @@ const applyAction = (
       draft.wsConnectTimedOut = true
       break
     }
+
+    case types.UPDATE_USER_ID: {
+      draft.userId = action.payload.userId
+      break
+    }
+
+    case types.UPDATE_HAS_PUSH_SUBSCRIPTION: {
+      draft.hasPushNotificationsSubscription = action.payload.hasSubscription
+      break
+    }
+
+    case types.UPDATE_CAN_SUBSCRIBE: {
+      draft.canEnablePushNotifications = action.payload.canSubscribe
+      break
+    }
   }
 }
 

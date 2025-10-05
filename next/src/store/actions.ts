@@ -1,3 +1,4 @@
+import type { PushSubscription } from 'web-push'
 import { Item, ItemId } from '../types/store/Item'
 import genItemId from '../utils/genItemId'
 import type {
@@ -13,6 +14,12 @@ import type {
   ClearListAction,
   BatchAction,
   WebsocketConnectionTimeoutExceeded,
+  SignalFinishedShoppingList,
+  SubscribeUserPushNotifications,
+  UnSubscribeUserPushNotifications,
+  UpdateUserIdAction,
+  UpdateHasPushSubscriptionAction,
+  UpdateCanSubscribeAction,
 } from '../types/store/Action'
 import { Action } from '../types/store/Action'
 
@@ -28,15 +35,25 @@ export const types = {
   UNDO: 'UNDO' as const,
   REDO: 'REDO' as const,
 
+  // actions only send from server, never received
+  SYNC_WITH_SERVER: 'SYNC_WITH_SERVER' as const,
+  SIGNAL_FINISHED_SHOPPINGLIST: 'SIGNAL_FINISHED_SHOPPINGLIST' as const,
+  SUBSCRIBE_USER_PUSH_NOTIFICATIONS:
+    'SUBSCRIBE_USER_PUSH_NOTIFICATIONS' as const,
+  UNSUBSCRIBE_USER_PUSH_NOTIFICATIONS:
+    'UNSUBSCRIBE_USER_PUSH_NOTIFICATIONS' as const,
+
   // actions only received from server, never send
   INITIAL_FULL_DATA: 'INITIAL_FULL_DATA' as const,
-  SYNC_WITH_SERVER: 'SYNC_WITH_SERVER' as const,
 
   // actions that should not be forwarded
   WEBSOCKET_CONNECTIONSTATE_CHANGED:
     'WEBSOCKET_CONNECTIONSTATE_CHANGED' as const,
   WEBSOCKET_CONNECTION_TIMEOUT_EXCEEDED:
     'WEBSOCKET_CONNECTION_TIMEOUT_EXCEEDED' as const,
+  UPDATE_USER_ID: 'UPDATE_USER_ID' as const,
+  UPDATE_HAS_PUSH_SUBSCRIPTION: 'UPDATE_HAS_PUSH_SUBSCRIPTION' as const,
+  UPDATE_CAN_SUBSCRIBE: 'UPDATE_CAN_SUBSCRIBE' as const,
 }
 
 const actions = {
@@ -133,6 +150,48 @@ const actions = {
   syncWithServer: (offlineActions: UndoableAction[]): SyncWithServerAction => ({
     type: types.SYNC_WITH_SERVER,
     payload: offlineActions,
+  }),
+
+  signalFinishedShoppingList: (userId: string): SignalFinishedShoppingList => ({
+    type: types.SIGNAL_FINISHED_SHOPPINGLIST,
+    payload: { userId },
+  }),
+
+  subscribeUserPushNotifications: (
+    userId: string,
+    subscription: PushSubscription,
+  ): SubscribeUserPushNotifications => ({
+    type: types.SUBSCRIBE_USER_PUSH_NOTIFICATIONS,
+    payload: { userId, subscription },
+  }),
+
+  unSubscribeUserPushNotifications: (
+    userId: string,
+  ): UnSubscribeUserPushNotifications => ({
+    type: types.UNSUBSCRIBE_USER_PUSH_NOTIFICATIONS,
+    payload: { userId },
+  }),
+
+  updateUserId: (userId: string): UpdateUserIdAction => ({
+    type: types.UPDATE_USER_ID,
+    payload: { userId },
+    fromUser: false,
+  }),
+
+  updateHasPushSubscription: (
+    hasSubscription: boolean,
+  ): UpdateHasPushSubscriptionAction => ({
+    type: types.UPDATE_HAS_PUSH_SUBSCRIPTION,
+    payload: { hasSubscription },
+    fromUser: false,
+    private: true,
+  }),
+
+  updateCanSubscribe: (canSubscribe: boolean): UpdateCanSubscribeAction => ({
+    type: types.UPDATE_CAN_SUBSCRIBE,
+    payload: { canSubscribe },
+    fromUser: false,
+    private: true,
   }),
 }
 

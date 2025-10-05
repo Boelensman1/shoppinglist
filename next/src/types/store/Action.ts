@@ -1,3 +1,4 @@
+import type { PushSubscription } from 'web-push'
 import type { types } from '../../store/actions'
 import type { Item } from './Item'
 import type { State } from './State'
@@ -89,6 +90,42 @@ export interface BatchAction extends BaseAction {
   payload: UndoableAction[]
 }
 
+export interface SignalFinishedShoppingList extends BaseAction {
+  type: typeof types.SIGNAL_FINISHED_SHOPPINGLIST
+  payload: { userId: string }
+}
+
+export interface SubscribeUserPushNotifications extends BaseAction {
+  type: typeof types.SUBSCRIBE_USER_PUSH_NOTIFICATIONS
+  payload: { userId: string; subscription: PushSubscription }
+}
+
+export interface UnSubscribeUserPushNotifications extends BaseAction {
+  type: typeof types.UNSUBSCRIBE_USER_PUSH_NOTIFICATIONS
+  payload: { userId: string }
+}
+
+export interface UpdateUserIdAction extends BaseAction {
+  type: typeof types.UPDATE_USER_ID
+  payload: { userId: string }
+  fromUser: false
+  fromIdbm?: true
+}
+
+export interface UpdateHasPushSubscriptionAction extends BaseAction {
+  type: typeof types.UPDATE_HAS_PUSH_SUBSCRIPTION
+  payload: { hasSubscription: boolean }
+  fromUser: false
+  private: true
+}
+
+export interface UpdateCanSubscribeAction extends BaseAction {
+  type: typeof types.UPDATE_CAN_SUBSCRIBE
+  payload: { canSubscribe: boolean }
+  fromUser: false
+  private: true
+}
+
 export type MergeableUndoableAction =
   | RemoveListItemAction
   | AddListItemAction
@@ -109,3 +146,9 @@ export type Action =
   | WebsocketConnectionStateChangedAction
   | WebsocketConnectionTimeoutExceeded
   | SyncWithServerAction
+  | SignalFinishedShoppingList
+  | SubscribeUserPushNotifications
+  | UnSubscribeUserPushNotifications
+  | UpdateUserIdAction
+  | UpdateHasPushSubscriptionAction
+  | UpdateCanSubscribeAction

@@ -1,9 +1,18 @@
+import webpush from 'web-push'
+import 'dotenv/config'
 import type Objection from 'objection'
 
 import WebSocket from 'ws'
 import ShoppingListEntry from './ShoppingListEntry.mjs'
 import ParsedMessage from './ParsedMessage.js'
 import { insertInitial } from './index.mjs'
+import PushSubscriptionJSON from './PushSubscription.mjs'
+
+webpush.setVapidDetails(
+  'mailto:me@wigger.email',
+  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+  process.env.VAPID_PRIVATE_KEY!,
+)
 
 const handleMessage = async (
   ws: WebSocket,
@@ -97,8 +106,75 @@ const handleMessage = async (
           )
         },
       )
-
       return
+
+    case 'SUBSCRIBE_USER_PUSH_NOTIFICATIONS': {
+      const { userId, subscription } = parsedMessage.payload
+
+      await PushSubscriptionJSON.transaction(async (trx) => {
+        const existingSub = await PushSubscriptionJSON.query(trx)
+          .findOne({
+            userId,
+          })
+          .forUpdate()
+
+        if (existingSub) {
+          await existingSub.$query(trx).update({
+            authKey: subscription.keys.auth,
+            p256dh: subscription.keys.p256dh,
+            endpoint: subscription.endpoint,
+            expirationTime: subscription.expirationTime ?? undefined,
+          })
+        } else {
+          await PushSubscriptionJSON.query(trx).insert({
+            userId,
+            authKey: subscription.keys.auth,
+            p256dh: subscription.keys.p256dh,
+            endpoint: subscription.endpoint,
+            expirationTime: subscription.expirationTime ?? undefined,
+          })
+        }
+      })
+      return
+    }
+
+    case 'UNSUBSCRIBE_USER_PUSH_NOTIFICATIONS': {
+      const { userId } = parsedMessage.payload
+      await PushSubscriptionJSON.query()
+        .findOne({
+          userId,
+        })
+        .delete()
+      return
+    }
+
+    case 'SIGNAL_FINISHED_SHOPPINGLIST': {
+      const subscription = await PushSubscriptionJSON.query().findOne({
+        userId: parsedMessage.payload.userId,
+      })
+      const items = await ShoppingListEntry.query()
+
+      if (!subscription) {
+        throw new Error('No subscription available')
+      }
+
+      try {
+        await webpush.sendNotification(
+          subscription.toWebPush(),
+          JSON.stringify({
+            title: 'Boodschappenlijstje is af!',
+            body: `Er staan ${items.length} boodschappen op.`,
+            data: {
+              items: items.map((item) => item.toJSON()),
+            },
+          }),
+        )
+        return { success: true }
+      } catch (error) {
+        console.error('Error sending push notification:', error)
+        return { success: false, error: 'Failed to send notification' }
+      }
+    }
   }
 }
 

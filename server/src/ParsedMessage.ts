@@ -1,7 +1,11 @@
-interface Item {
+import type { PushSubscription } from 'web-push'
+
+export interface Item {
   id: string
   value: string
   checked: boolean
+  deleted: boolean
+  prevItemId: string
 }
 
 interface ParsedMessage_syncWithServer {
@@ -39,6 +43,22 @@ interface ParsedMessage_batch {
   type: 'BATCH'
   payload: ParsedMessageUndoable[]
 }
+export interface ParsedMessage_signalFinishedShoppingList {
+  type: 'SIGNAL_FINISHED_SHOPPINGLIST'
+}
+export interface ParsedMessage_signalFinishedShoppingList {
+  type: 'SIGNAL_FINISHED_SHOPPINGLIST'
+  payload: { userId: string }
+}
+export interface ParsedMessage_subscribeUserPushNotifications {
+  type: 'SUBSCRIBE_USER_PUSH_NOTIFICATIONS'
+  payload: { userId: string; subscription: PushSubscription }
+}
+
+export interface ParsedMessage_unSubscribeUserPushNotifications {
+  type: 'UNSUBSCRIBE_USER_PUSH_NOTIFICATIONS'
+  payload: { userId: string }
+}
 
 type ParsedMessageUndoable =
   | ParsedMessage_addItem
@@ -49,6 +69,11 @@ type ParsedMessageUndoable =
   | ParsedMessage_setList
   | ParsedMessage_batch
 
-type ParsedMessage = ParsedMessageUndoable | ParsedMessage_syncWithServer
+type ParsedMessage =
+  | ParsedMessageUndoable
+  | ParsedMessage_syncWithServer
+  | ParsedMessage_signalFinishedShoppingList
+  | ParsedMessage_subscribeUserPushNotifications
+  | ParsedMessage_unSubscribeUserPushNotifications
 
 export default ParsedMessage

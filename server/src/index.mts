@@ -43,6 +43,19 @@ const init = async () => {
 
     await insertInitial()
   }
+
+  if (!(await knex.schema.hasTable('pushSubscriptions'))) {
+    await knex.schema.createTable('pushSubscriptions', (table) => {
+      table.string('userId').primary()
+      table.string('authKey').notNullable()
+      table.string('p256dh').notNullable()
+      table.string('endpoint').notNullable()
+      table.integer('expirationTime').unsigned()
+      table.timestamps(true, true, true)
+    })
+
+    await insertInitial()
+  }
 }
 
 const main = async () => {

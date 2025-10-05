@@ -5,14 +5,13 @@ import { useState } from 'react'
 import { getUndoRedoStore } from './UndoRedoHandler'
 import actions from '../store/actions'
 import type { Item } from '../types/store/Item'
-import type { Action } from '../types/store/Action'
+import { useStore } from '../store/useStore'
 
 interface ActionButtonsProps {
   items: Item[]
   undoListLength: number
   redoListLength: number
   useMobileLayout: boolean
-  dispatch: (action: Action) => void
 }
 
 export default function ActionButtons({
@@ -20,8 +19,8 @@ export default function ActionButtons({
   undoListLength,
   redoListLength,
   useMobileLayout,
-  dispatch,
 }: ActionButtonsProps) {
+  const { dispatch, state, pushSubRef } = useStore()
   const [showButtons, setShowButtons] = useState(false)
 
   return (
@@ -91,6 +90,30 @@ export default function ActionButtons({
               </button>
             </>
           )}
+          {state.canEnablePushNotifications && (
+            <button
+              className="bg-purple-500 text-white p-2 rounded-full shadow-lg px-4"
+              onClick={() => {
+                if (state.hasPushNotificationsSubscription) {
+                  pushSubRef.unsubscribe()
+                } else {
+                  pushSubRef.subscribe()
+                }
+              }}
+            >
+              {state.hasPushNotificationsSubscription
+                ? 'Unsubscribe from notifications'
+                : 'Subscribe to notifications'}
+            </button>
+          )}
+          <button
+            className="bg-green-500 text-white p-2 rounded-full shadow-lg px-4"
+            onClick={() => {
+              dispatch(actions.signalFinishedShoppingList(state.userId))
+            }}
+          >
+            Signal shopping list finished
+          </button>
           <button
             className="bg-blue-500 text-white p-2 rounded-full shadow-lg px-4"
             onClick={() => {
