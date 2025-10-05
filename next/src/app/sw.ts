@@ -1,4 +1,26 @@
-async function storeNotificationData(items) {
+/// <reference lib="webworker" />
+import type { PrecacheEntry, SerwistGlobalConfig } from 'serwist'
+import { defaultCache } from '@serwist/next/worker'
+import { Serwist } from 'serwist'
+
+declare global {
+  interface WorkerGlobalScope extends SerwistGlobalConfig {
+    __SW_MANIFEST: (PrecacheEntry | string)[] | undefined
+  }
+}
+
+declare const self: ServiceWorkerGlobalScope
+
+const serwist = new Serwist({
+  precacheEntries: self.__SW_MANIFEST,
+  skipWaiting: true,
+  clientsClaim: true,
+  navigationPreload: true,
+  runtimeCaching: defaultCache,
+})
+
+// Notification handling (preserve existing functionality)
+async function storeNotificationData(items: unknown) {
   return new Promise((resolve, reject) => {
     const request = self.indexedDB.open('ShoppinglistDB', 1)
 
@@ -6,19 +28,19 @@ async function storeNotificationData(items) {
     request.onsuccess = () => {
       const db = request.result
       if (!db.objectStoreNames.contains('pendingNotifications')) {
-        resolve() // Store doesn't exist yet, skip
+        resolve(undefined)
         return
       }
       const transaction = db.transaction(['pendingNotifications'], 'readwrite')
       const store = transaction.objectStore('pendingNotifications')
       store.put({ id: 'latest', items, timestamp: Date.now() })
-      transaction.oncomplete = () => resolve()
+      transaction.oncomplete = () => resolve(undefined)
       transaction.onerror = () => reject(transaction.error)
     }
   })
 }
 
-self.addEventListener('push', function (event) {
+self.addEventListener('push', function (event: PushEvent) {
   if (event.data) {
     const data = event.data.json()
     const options = {
@@ -34,17 +56,22 @@ self.addEventListener('push', function (event) {
 
     const tasks = [self.registration.showNotification(data.title, options)]
 
-    // Store notification data in IndexedDB for when app is reopened
     if (data.data?.items) {
-      tasks.push(storeNotificationData(data.data.items).catch(() => {}))
+      tasks.push(
+        storeNotificationData(data.data.items)
+          .catch(() => {})
+          .then(() => undefined),
+      )
     }
 
     event.waitUntil(Promise.all(tasks))
   }
 })
 
-self.addEventListener('notificationclick', function (event) {
+self.addEventListener('notificationclick', function (event: NotificationEvent) {
   console.log('Notification click received.')
   event.notification.close()
-  event.waitUntil(clients.openWindow('<https://your-website.com>'))
+  event.waitUntil(self.clients.openWindow('<https://your-website.com>'))
 })
+
+serwist.addEventListeners()
