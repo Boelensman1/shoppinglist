@@ -149,25 +149,31 @@ const handleMessage = async (
     }
 
     case 'SIGNAL_FINISHED_SHOPPINGLIST': {
-      const subscription = await PushSubscriptionJSON.query().findOne({
-        userId: parsedMessage.payload.userId,
-      })
+      const subscriptions = await PushSubscriptionJSON.query().where(
+        'userId',
+        '!=',
+        parsedMessage.payload.userId,
+      )
       const items = await ShoppingListEntry.query()
 
-      if (!subscription) {
-        throw new Error('No subscription available')
+      if (subscriptions.length === 0) {
+        throw new Error('No subscriptions available')
       }
 
       try {
-        await webpush.sendNotification(
-          subscription.toWebPush(),
-          JSON.stringify({
-            title: 'Boodschappenlijstje is af!',
-            body: `Er staan ${items.length} boodschappen op.`,
-            data: {
-              items: items.map((item) => item.toJSON()),
-            },
-          }),
+        await Promise.all(
+          subscriptions.map((subscription) =>
+            webpush.sendNotification(
+              subscription.toWebPush(),
+              JSON.stringify({
+                title: 'Boodschappenlijstje is af!',
+                body: `Er staan ${items.length} boodschappen op.`,
+                data: {
+                  items: items.map((item) => item.toJSON()),
+                },
+              }),
+            ),
+          ),
         )
         return { success: true }
       } catch (error) {
