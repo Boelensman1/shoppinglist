@@ -31,7 +31,6 @@ export const itemsToList = (items: State['items']): Item[] => {
   })
 
   const itemList: Item[] = []
-  console.log([...itemsWithPrevId.entries()])
   addItemsToList(itemList, items, itemsWithPrevId, 'HEAD')
 
   return itemList

@@ -10,7 +10,7 @@ clean:
 
 build: $(INSTALL_DEPS) $(SRC_FILES) tsconfig.json next.config.ts tailwind.config.ts postcss.config.mjs
 	NEXT_TELEMETRY_DISABLED=1 npx next build
-	cp -r public build/standalone/ && cp -r build/static  build/standalone/build/
+	cp -r public build/standalone/ && cp -r build/static build/standalone/build/
 
 serve: build
 	node build/standalone/server.js
