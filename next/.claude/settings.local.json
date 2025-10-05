@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Volumes/AeroFS/PersonalProjects/node/apps/shoppinglist/client/src/components/**)",
+      "Read(//Volumes/AeroFS/PersonalProjects/node/apps/shoppinglist/client/src/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
