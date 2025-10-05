@@ -144,9 +144,9 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = (props) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{
-        layout: { duration: 0.3, ease: 'easeInOut' },
-        opacity: { duration: 0.2 },
-        y: { duration: 0.3 },
+        layout: { duration: 0.5, ease: 'easeInOut' },
+        opacity: { duration: 0.5 },
+        y: { duration: 0.5 },
       }}
     >
       <input
