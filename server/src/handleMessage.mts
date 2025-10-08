@@ -56,7 +56,7 @@ const handleMessage = async (
     case 'REMOVE_LIST_ITEM':
       await ShoppingListEntry.query(inTransaction)
         .findById(parsedMessage.payload.id)
-        .del()
+        .patch({ deleted: true })
       return
     case 'UPDATE_LIST_ITEM_VALUE':
       await ShoppingListEntry.query(inTransaction)
