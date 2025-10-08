@@ -50,6 +50,13 @@ const applyAction = (
       const deletedItem = draft.items[id]
       draft.items[id].deleted = true
 
+      // focus the previous item
+      if (action.payload.displayedNextItemId) {
+        draft.focusTargetId = action.payload.displayedNextItemId
+      } else if (action.payload.displayedPrevItemId) {
+        draft.focusTargetId = action.payload.displayedPrevItemId
+      }
+
       if (canUndo(action)) {
         undoList.push({
           type: types.ADD_LIST_ITEM,
@@ -167,6 +174,11 @@ const applyAction = (
 
     case types.UPDATE_CAN_SUBSCRIBE: {
       draft.canEnablePushNotifications = action.payload.canSubscribe
+      break
+    }
+
+    case types.FOCUS_PROCESSED: {
+      draft.focusTargetId = null
       break
     }
   }

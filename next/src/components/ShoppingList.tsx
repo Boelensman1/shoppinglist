@@ -2,20 +2,20 @@
 
 import { AnimatePresence } from 'framer-motion'
 import ShoppingListItem from './ShoppingListItem'
-import type { Item } from '../types/store/Item'
+import type { ItemWithDisplayedInfo } from '@/utils/itemsToList'
 
 interface ShoppingListProps {
-  items: Item[]
+  items: ItemWithDisplayedInfo[]
 }
 
 const ShoppingList: React.FC<ShoppingListProps> = ({ items }) => (
   <div className="relative">
     <AnimatePresence mode="popLayout">
-      {items.map((item, i) => (
+      {items.map((item) => (
         <ShoppingListItem
-          key={i} // use index as key so that focus works correctly
+          key={item.id}
           isOnly={items.length === 1}
-          isLast={i === items.length - 1}
+          isLast={!item.displayedNextItemId}
           {...item}
         />
       ))}

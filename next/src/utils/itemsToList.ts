@@ -4,6 +4,11 @@ import type { State } from '@/types/store/State'
 
 type ItemsWithPrevId = Map<Item['prevItemId'], Item['id'][]>
 
+export type ItemWithDisplayedInfo = Item & {
+  displayedPrevItemId?: string
+  displayedNextItemId?: string
+}
+
 const addItemsToList = (
   itemList: Item[],
   items: State['items'],
@@ -21,7 +26,7 @@ const addItemsToList = (
   })
 }
 
-export const itemsToList = (items: State['items']): Item[] => {
+export const itemsToList = (items: State['items']): ItemWithDisplayedInfo[] => {
   // start by creating a map of prevIds
   const itemsWithPrevId: ItemsWithPrevId = new Map()
   Object.values(items).forEach((item) => {
@@ -44,4 +49,10 @@ export const itemsToList = (items: State['items']): Item[] => {
       }
       return 0
     })
+    .map((item, index, arr) => ({
+      ...item,
+      displayedPrevItemId: index === 0 ? undefined : arr[index - 1].id,
+      displayedNextItemId:
+        index === arr.length - 1 ? undefined : arr[index + 1].id,
+    }))
 }

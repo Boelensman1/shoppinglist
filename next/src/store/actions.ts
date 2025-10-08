@@ -20,6 +20,7 @@ import type {
   UpdateUserIdAction,
   UpdateHasPushSubscriptionAction,
   UpdateCanSubscribeAction,
+  FocusProcessedAction,
 } from '../types/store/Action'
 import { Action } from '../types/store/Action'
 
@@ -54,6 +55,7 @@ export const types = {
   UPDATE_USER_ID: 'UPDATE_USER_ID' as const,
   UPDATE_HAS_PUSH_SUBSCRIPTION: 'UPDATE_HAS_PUSH_SUBSCRIPTION' as const,
   UPDATE_CAN_SUBSCRIBE: 'UPDATE_CAN_SUBSCRIBE' as const,
+  FOCUS_PROCESSED: 'FOCUS_PROCESSED' as const,
 }
 
 const actions = {
@@ -71,9 +73,13 @@ const actions = {
       private: true,
     }),
 
-  removeListItem: (id: string): RemoveListItemAction => ({
+  removeListItem: (payload: {
+    id: string
+    displayedPrevItemId?: string
+    displayedNextItemId?: string
+  }): RemoveListItemAction => ({
     type: types.REMOVE_LIST_ITEM,
-    payload: { id },
+    payload,
   }),
   clear: (): ClearListAction => ({
     type: types.CLEAR_LIST,
@@ -191,6 +197,11 @@ const actions = {
     type: types.UPDATE_CAN_SUBSCRIBE,
     payload: { canSubscribe },
     fromUser: false,
+    private: true,
+  }),
+
+  focusProcessed: (): FocusProcessedAction => ({
+    type: types.FOCUS_PROCESSED,
     private: true,
   }),
 }

@@ -13,6 +13,8 @@ export interface RemoveListItemAction extends BaseAction {
   redo?: UndoableAction
   payload: {
     id: string
+    displayedPrevItemId?: string
+    displayedNextItemId?: string
   }
 }
 
@@ -126,6 +128,11 @@ export interface UpdateCanSubscribeAction extends BaseAction {
   private: true
 }
 
+export interface FocusProcessedAction extends BaseAction {
+  type: typeof types.FOCUS_PROCESSED
+  private: true
+}
+
 export type MergeableUndoableAction =
   | RemoveListItemAction
   | AddListItemAction
@@ -152,3 +159,4 @@ export type Action =
   | UpdateUserIdAction
   | UpdateHasPushSubscriptionAction
   | UpdateCanSubscribeAction
+  | FocusProcessedAction

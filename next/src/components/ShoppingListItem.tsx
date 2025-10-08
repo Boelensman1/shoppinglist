@@ -12,7 +12,8 @@ import { motion } from 'framer-motion'
 import { useStore } from '@/store/useStore'
 import actions from '@/store/actions'
 import genItemId from '@/utils/genItemId'
-import { Item, ItemId } from '@/types/store/Item'
+import { Item } from '@/types/store/Item'
+import type { ItemWithDisplayedInfo } from '@/utils/itemsToList'
 
 const parsePasteLineValue = (line: string) => {
   let parsedLine = line.trim()
@@ -32,12 +33,9 @@ const parsePasteLineChecked = (line: string) => {
   return false
 }
 
-interface ShoppingListItemProps {
-  id: ItemId
+interface ShoppingListItemProps extends ItemWithDisplayedInfo {
   isLast: boolean
   isOnly: boolean
-  value: string
-  checked: boolean
 }
 
 type Line = Omit<Item, 'prevItemId'>
@@ -50,8 +48,9 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = (props) => {
   useEffect(() => {
     if (state.focusTargetId === props.id) {
       inputRef.current?.focus()
+      dispatch(actions.focusProcessed())
     }
-  }, [state.focusTargetId, props.id])
+  }, [state.focusTargetId, props.id, dispatch])
 
   const handleInput = (event: ChangeEvent<HTMLInputElement>) => {
     dispatch(actions.updateListItemValue(props.id, event.currentTarget.value))
@@ -75,7 +74,13 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = (props) => {
     if (event.key === 'Backspace' && event.currentTarget.value === '') {
       event.preventDefault()
       if (!props.isOnly) {
-        dispatch(actions.removeListItem(props.id))
+        dispatch(
+          actions.removeListItem({
+            id: props.id,
+            displayedPrevItemId: props.displayedPrevItemId,
+            displayedNextItemId: props.displayedNextItemId,
+          }),
+        )
       }
     }
   }
@@ -140,13 +145,14 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = (props) => {
       )}
       id={`sli-${props.id}`}
       layout
-      initial={{ opacity: 0, y: -20 }}
+      // initial={{ opacity: 0, y: -20 }}
+      initial={false}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{
-        layout: { duration: 0.5, ease: 'easeInOut' },
-        opacity: { duration: 0.5 },
-        y: { duration: 0.5 },
+        layout: { duration: 0.3, ease: 'easeInOut' },
+        opacity: { duration: 0.3 },
+        y: { duration: 0.3 },
       }}
     >
       <input
