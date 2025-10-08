@@ -28,7 +28,16 @@ export default function App() {
           useMobileLayout &&
           'p-1',
       )}
-      style={{ overflow: 'scroll' }}
+      style={{
+        overflowY: 'scroll',
+        overflowX: 'hidden',
+        paddingTop: useMobileLayout
+          ? 'max(env(safe-area-inset-top), 0px)'
+          : undefined,
+        paddingBottom: useMobileLayout
+          ? 'env(safe-area-inset-bottom)'
+          : undefined,
+      }}
     >
       {isLoaded(state) ? (
         <>
