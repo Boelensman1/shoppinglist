@@ -61,10 +61,16 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     wsmRef.current.connect(wsUrl, dispatch)
 
     // Set timeout for websocket to connect (this is the time the loading animtation plays before we give up)
-    const tId = setTimeout(() => {
+    // Only set timeout if user is online
+    if (navigator.onLine) {
+      const tId = setTimeout(() => {
+        dispatch(actions.websocketConnectionTimeoutExceeded())
+      }, 2000)
+      return () => clearTimeout(tId)
+    } else {
+      // if the user is offline, assume the timeout will be exceeded and stop loading immediately (the websocket will keep trying to connect in the background)
       dispatch(actions.websocketConnectionTimeoutExceeded())
-    }, 2000)
-    return () => clearTimeout(tId)
+    }
   }, [dispatch])
 
   useEffect(() => {
