@@ -127,14 +127,11 @@ export interface FocusProcessedAction extends BaseAction {
   type: typeof types.FOCUS_PROCESSED
 }
 
-export type MergeableUndoableAction =
+export type UndoableAction =
   | RemoveListItemAction
   | AddListItemAction
   | UpdateListItemValueAction
   | UpdateListItemCheckedAction
-
-export type UndoableAction =
-  | MergeableUndoableAction
   | ClearListAction
   | SetListAction
   | BatchAction
