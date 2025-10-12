@@ -88,6 +88,11 @@ const actions = {
     type: types.CLEAR_LIST,
     from: 'user',
   }),
+  executeBatch: (batchActions: UndoableAction[]): BatchAction => ({
+    type: types.BATCH,
+    payload: batchActions,
+    from: 'user',
+  }),
   clearCheckedItems: (items: Item[]): BatchAction | ClearListAction => {
     const nonDeletedItems = items.filter((item: Item) => !item.deleted)
 
@@ -116,11 +121,7 @@ const actions = {
       ),
     )
 
-    return {
-      type: types.BATCH,
-      payload: batchActions,
-      from: 'user',
-    }
+    return actions.executeBatch(batchActions)
   },
   addListItem: (
     prevItemId: ItemId,

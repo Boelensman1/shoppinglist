@@ -117,17 +117,20 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = (props) => {
       firstLine.value +
       props.value.slice(selectionEnd)
 
-    dispatch(actions.updateListItemValue(props.id, newValue))
+    const batch = []
+    batch.push(actions.updateListItemValue(props.id, newValue))
 
     if (firstLine.checked && firstLine.checked != props.checked) {
-      dispatch(actions.updateListItemChecked(props.id, firstLine.checked))
+      batch.push(actions.updateListItemChecked(props.id, firstLine.checked))
     }
 
     let lastId = props.id
     lines.forEach((line) => {
-      dispatch(actions.addListItem(lastId, line))
+      batch.push(actions.addListItem(lastId, line))
       lastId = line.id
     })
+
+    dispatch(actions.executeBatch(batch))
 
     setTimeout(() => {
       // Fix the cursor position
