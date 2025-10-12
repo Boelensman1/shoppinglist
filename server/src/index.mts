@@ -78,10 +78,9 @@ const main = async () => {
 
     // Receiving message from client
     ws.on('message', (message) => {
-      broadcastMessage(ws, message.toString())
-      const parsedMessage = JSON.parse(
-        message.toString(),
-      ) as unknown as ParsedMessage
+      const msgAsString = message.toString()
+      broadcastMessage(ws, msgAsString)
+      const parsedMessage = JSON.parse(msgAsString) as unknown as ParsedMessage
 
       handleMessage(ws, parsedMessage)
     })
