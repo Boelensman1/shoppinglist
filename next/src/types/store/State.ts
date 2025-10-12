@@ -6,6 +6,7 @@ export interface State {
   items: Record<string, Item>
   focusTargetId: string | null
   idbmLoaded: boolean
+  serverLoaded: boolean
   wsConnectTimedOut: boolean
   undoList: UndoableAction[]
   redoList: UndoableAction[]

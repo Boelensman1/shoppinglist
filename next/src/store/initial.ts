@@ -5,6 +5,7 @@ const initial: State = {
   items: {},
   focusTargetId: null,
   idbmLoaded: false,
+  serverLoaded: false,
   wsConnectTimedOut: false, // grace period for ws to load (we're showing the loading spinner untill this is true)
   undoList: [],
   redoList: [],

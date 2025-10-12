@@ -133,12 +133,19 @@ const applyAction = (
       break
     }
     case types.INITIAL_FULL_DATA: {
-      draft.items = action.payload.reduce<State['items']>((acc, item) => {
-        acc[item.id] = item
-        return acc
-      }, {})
+      // check that we don't overwrite the server data with idbm data
+      if (action.from !== 'idbm' || draft.serverLoaded !== true) {
+        draft.items = action.payload.reduce<State['items']>((acc, item) => {
+          acc[item.id] = item
+          return acc
+        }, {})
+      }
+
       if (action.from === 'idbm') {
         draft.idbmLoaded = true
+      }
+      if (action.from === 'server') {
+        draft.serverLoaded = true
       }
       break
     }
