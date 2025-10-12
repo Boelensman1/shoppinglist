@@ -19,6 +19,7 @@ const handleMessage = async (
   parsedMessage: ParsedMessage,
   inTransaction?: Objection.Transaction,
 ) => {
+  console.log(JSON.stringify(parsedMessage, null, 2))
   switch (parsedMessage.type) {
     case 'SYNC_WITH_SERVER': {
       // handle offline messages
@@ -48,7 +49,7 @@ const handleMessage = async (
           await ShoppingListEntry.query(trx)
             .insert(item)
             .onConflict('id')
-            .ignore()
+            .merge()
         },
       )
       return
