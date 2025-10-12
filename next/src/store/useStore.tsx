@@ -39,7 +39,8 @@ export const useStore = () => {
 }
 
 export const StoreProvider = ({ children }: { children: ReactNode }) => {
-  const [focusEventHandled, setFocusEventHandled] = useState(false)
+  const [syncWithServerRequestHandled, setSyncWithServerRequestHandled] =
+    useState(false)
   const wsmRef = useRef<WebSocketManager>(new WebSocketManager())
   const idbmRef = useRef<IndexedDbManager>(new IndexedDbManager())
   const pushSubRef = useRef<PushNotificationManager>(
@@ -109,28 +110,34 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     })
   }, [dispatch])
 
-  // Sync with server when page gains focus
+  // Sync with server when page becomes visible (works for both browser and installed PWA)
   useEffect(() => {
-    const handleFocus = () => {
-      setFocusEventHandled(false)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        setSyncWithServerRequestHandled(false)
+      }
     }
 
-    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => {
-      window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [])
 
   useEffect(() => {
-    if (focusEventHandled) {
+    if (syncWithServerRequestHandled) {
+      // already handled the sync with server request, nothing to do
       return
     }
 
-    if (state.webSocketState === 'connected') {
-      setFocusEventHandled(true)
-      wsmRef.current.sendMessage(actions.syncWithServer([]), false)
+    if (!state.idbmLoaded || state.webSocketState !== 'connected') {
+      // not loaded/connected yet, wait for syncing untill we are
+      return
     }
-  }, [state.webSocketState, focusEventHandled])
+
+    setSyncWithServerRequestHandled(true)
+    wsmRef.current.sendMessage(actions.syncWithServer([]), false)
+  }, [state.webSocketState, state.idbmLoaded, syncWithServerRequestHandled])
 
   return (
     <StoreContext.Provider
