@@ -25,11 +25,7 @@ class WebSocketManager {
     this.webSocket.onopen = () => {
       console.log('WebSocket connected.')
 
-      const offlineActions = this.offlineMessageQueue.filter((action) =>
-        isUndoableAction(action),
-      )
-      this.sendMessage(actions.syncWithServer(offlineActions), false)
-      this.offlineMessageQueue = []
+      this.syncWithServer()
 
       dispatch(actions.webSocketConnectionStateChanged('connected'))
     }
@@ -80,6 +76,14 @@ class WebSocketManager {
         this.offlineMessageQueue.push(message)
       }
     }
+  }
+
+  syncWithServer() {
+    const offlineActions = this.offlineMessageQueue.filter((action) =>
+      isUndoableAction(action),
+    )
+    this.sendMessage(actions.syncWithServer(offlineActions), false)
+    this.offlineMessageQueue = []
   }
 }
 

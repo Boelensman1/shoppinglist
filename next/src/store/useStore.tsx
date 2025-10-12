@@ -40,7 +40,7 @@ export const useStore = () => {
 
 export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [syncWithServerRequestHandled, setSyncWithServerRequestHandled] =
-    useState(false)
+    useState(true)
   const wsmRef = useRef<WebSocketManager>(new WebSocketManager())
   const idbmRef = useRef<IndexedDbManager>(new IndexedDbManager())
   const pushSubRef = useRef<PushNotificationManager>(
@@ -134,7 +134,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setSyncWithServerRequestHandled(true)
-    wsmRef.current.sendMessage(actions.syncWithServer([]), false)
+    wsmRef.current.syncWithServer()
   }, [state.webSocketState, state.idbmLoaded, syncWithServerRequestHandled])
 
   return (
