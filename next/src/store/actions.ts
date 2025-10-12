@@ -36,7 +36,7 @@ export const types = {
   UNDO: 'UNDO' as const,
   REDO: 'REDO' as const,
 
-  // actions only send from server, never received
+  // User actions sent to server (from: 'user')
   SYNC_WITH_SERVER: 'SYNC_WITH_SERVER' as const,
   SIGNAL_FINISHED_SHOPPINGLIST: 'SIGNAL_FINISHED_SHOPPINGLIST' as const,
   SUBSCRIBE_USER_PUSH_NOTIFICATIONS:
@@ -44,18 +44,20 @@ export const types = {
   UNSUBSCRIBE_USER_PUSH_NOTIFICATIONS:
     'UNSUBSCRIBE_USER_PUSH_NOTIFICATIONS' as const,
 
-  // actions only received from server, never send
+  // Server actions (from: 'server')
   INITIAL_FULL_DATA: 'INITIAL_FULL_DATA' as const,
 
-  // actions that should not be forwarded
+  // Internal actions not sent to server (from: 'internal')
   WEBSOCKET_CONNECTIONSTATE_CHANGED:
     'WEBSOCKET_CONNECTIONSTATE_CHANGED' as const,
   WEBSOCKET_CONNECTION_TIMEOUT_EXCEEDED:
     'WEBSOCKET_CONNECTION_TIMEOUT_EXCEEDED' as const,
-  UPDATE_USER_ID: 'UPDATE_USER_ID' as const,
   UPDATE_HAS_PUSH_SUBSCRIPTION: 'UPDATE_HAS_PUSH_SUBSCRIPTION' as const,
   UPDATE_CAN_SUBSCRIBE: 'UPDATE_CAN_SUBSCRIBE' as const,
   FOCUS_PROCESSED: 'FOCUS_PROCESSED' as const,
+
+  // IndexedDB actions (from: 'idbm')
+  UPDATE_USER_ID: 'UPDATE_USER_ID' as const,
 }
 
 const actions = {
@@ -64,13 +66,13 @@ const actions = {
   ): WebsocketConnectionStateChangedAction => ({
     type: types.WEBSOCKET_CONNECTIONSTATE_CHANGED,
     payload: newState,
-    private: true,
+    from: 'internal',
   }),
   // stop loading the websocket (connection attempts will continue)
   websocketConnectionTimeoutExceeded:
     (): WebsocketConnectionTimeoutExceeded => ({
       type: types.WEBSOCKET_CONNECTION_TIMEOUT_EXCEEDED,
-      private: true,
+      from: 'internal',
     }),
 
   removeListItem: (payload: {
@@ -80,9 +82,11 @@ const actions = {
   }): RemoveListItemAction => ({
     type: types.REMOVE_LIST_ITEM,
     payload,
+    from: 'user',
   }),
   clear: (): ClearListAction => ({
     type: types.CLEAR_LIST,
+    from: 'user',
   }),
   clearCheckedItems: (items: Item[]): BatchAction | ClearListAction => {
     const nonDeletedItems = items.filter((item: Item) => !item.deleted)
@@ -95,6 +99,7 @@ const actions = {
     if (checkedItemIds.length === nonDeletedItems.length) {
       return {
         type: types.CLEAR_LIST,
+        from: 'user',
       }
     }
 
@@ -102,15 +107,19 @@ const actions = {
 
     // Remove all checked items
     batchActions.push(
-      ...checkedItemIds.map((id: string) => ({
-        type: types.REMOVE_LIST_ITEM,
-        payload: { id },
-      })),
+      ...checkedItemIds.map(
+        (id: string): RemoveListItemAction => ({
+          type: types.REMOVE_LIST_ITEM,
+          payload: { id },
+          from: 'user',
+        }),
+      ),
     )
 
     return {
       type: types.BATCH,
       payload: batchActions,
+      from: 'user',
     }
   },
   addListItem: (
@@ -128,6 +137,7 @@ const actions = {
         }),
         prevItemId,
       },
+      from: 'user',
     }
   },
   updateListItemValue: (
@@ -136,6 +146,7 @@ const actions = {
   ): UpdateListItemValueAction => ({
     type: types.UPDATE_LIST_ITEM_VALUE,
     payload: { id, newValue },
+    from: 'user',
   }),
   updateListItemChecked: (
     id: string,
@@ -143,24 +154,29 @@ const actions = {
   ): UpdateListItemCheckedAction => ({
     type: types.UPDATE_LIST_ITEM_CHECKED,
     payload: { id, newChecked },
+    from: 'user',
   }),
   undo: (action: UndoableAction): UndoAction => ({
     type: types.UNDO,
     payload: action,
+    from: 'user',
   }),
   redo: (action: UndoableAction): RedoAction => ({
     type: types.REDO,
     payload: action,
+    from: 'user',
   }),
 
   syncWithServer: (offlineActions: UndoableAction[]): SyncWithServerAction => ({
     type: types.SYNC_WITH_SERVER,
     payload: offlineActions,
+    from: 'user',
   }),
 
   signalFinishedShoppingList: (userId: string): SignalFinishedShoppingList => ({
     type: types.SIGNAL_FINISHED_SHOPPINGLIST,
     payload: { userId },
+    from: 'user',
   }),
 
   subscribeUserPushNotifications: (
@@ -169,6 +185,7 @@ const actions = {
   ): SubscribeUserPushNotifications => ({
     type: types.SUBSCRIBE_USER_PUSH_NOTIFICATIONS,
     payload: { userId, subscription },
+    from: 'user',
   }),
 
   unSubscribeUserPushNotifications: (
@@ -176,12 +193,13 @@ const actions = {
   ): UnSubscribeUserPushNotifications => ({
     type: types.UNSUBSCRIBE_USER_PUSH_NOTIFICATIONS,
     payload: { userId },
+    from: 'user',
   }),
 
   updateUserId: (userId: string): UpdateUserIdAction => ({
     type: types.UPDATE_USER_ID,
     payload: { userId },
-    fromUser: false,
+    from: 'idbm',
   }),
 
   updateHasPushSubscription: (
@@ -189,20 +207,18 @@ const actions = {
   ): UpdateHasPushSubscriptionAction => ({
     type: types.UPDATE_HAS_PUSH_SUBSCRIPTION,
     payload: { hasSubscription },
-    fromUser: false,
-    private: true,
+    from: 'internal',
   }),
 
   updateCanSubscribe: (canSubscribe: boolean): UpdateCanSubscribeAction => ({
     type: types.UPDATE_CAN_SUBSCRIBE,
     payload: { canSubscribe },
-    fromUser: false,
-    private: true,
+    from: 'internal',
   }),
 
   focusProcessed: (): FocusProcessedAction => ({
     type: types.FOCUS_PROCESSED,
-    private: true,
+    from: 'internal',
   }),
 }
 

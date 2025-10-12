@@ -16,7 +16,7 @@ export const combinedReducer =
   }
 
 const webSocketSend = (wsm: WebSocketManager, action: Action) => {
-  if (!action.private && (action.fromUser ?? true)) {
+  if (action.from === 'user') {
     if (action.type === 'UNDO' || action.type === 'REDO') {
       wsm.sendMessage(action.payload)
     } else {

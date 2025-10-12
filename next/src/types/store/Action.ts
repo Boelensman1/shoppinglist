@@ -4,8 +4,11 @@ import type { Item } from './Item'
 import type { State } from './State'
 
 interface BaseAction {
-  fromUser?: false
-  private?: true
+  // from: 'user' -> user initiated, sent to server
+  // from: 'server' -> received from server
+  // from: 'idbm' -> loaded from IndexedDB
+  // from: 'internal' -> internal state management, not sent to server
+  from: 'user' | 'server' | 'idbm' | 'internal'
 }
 
 export interface RemoveListItemAction extends BaseAction {
@@ -55,8 +58,7 @@ export interface SyncWithServerAction extends BaseAction {
 export interface InitialFullDataAction extends BaseAction {
   type: typeof types.INITIAL_FULL_DATA
   payload: Item[]
-  fromUser: false
-  fromIdbm?: true
+  from: 'server' | 'idbm'
 }
 
 export interface SetListAction extends BaseAction {
@@ -78,12 +80,10 @@ export interface RedoAction extends BaseAction {
 export interface WebsocketConnectionStateChangedAction extends BaseAction {
   type: typeof types.WEBSOCKET_CONNECTIONSTATE_CHANGED
   payload: State['webSocketState']
-  private: true
 }
 
 export interface WebsocketConnectionTimeoutExceeded extends BaseAction {
   type: typeof types.WEBSOCKET_CONNECTION_TIMEOUT_EXCEEDED
-  private: true
 }
 
 export interface BatchAction extends BaseAction {
@@ -110,27 +110,21 @@ export interface UnSubscribeUserPushNotifications extends BaseAction {
 export interface UpdateUserIdAction extends BaseAction {
   type: typeof types.UPDATE_USER_ID
   payload: { userId: string }
-  fromUser: false
-  fromIdbm?: true
+  from: 'idbm'
 }
 
 export interface UpdateHasPushSubscriptionAction extends BaseAction {
   type: typeof types.UPDATE_HAS_PUSH_SUBSCRIPTION
   payload: { hasSubscription: boolean }
-  fromUser: false
-  private: true
 }
 
 export interface UpdateCanSubscribeAction extends BaseAction {
   type: typeof types.UPDATE_CAN_SUBSCRIBE
   payload: { canSubscribe: boolean }
-  fromUser: false
-  private: true
 }
 
 export interface FocusProcessedAction extends BaseAction {
   type: typeof types.FOCUS_PROCESSED
-  private: true
 }
 
 export type MergeableUndoableAction =

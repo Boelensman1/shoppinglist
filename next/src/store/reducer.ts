@@ -6,7 +6,7 @@ import { UndoableAction } from '../types/store/Action'
 import { ItemId } from '../types/store/Item'
 
 const canUndo = (action: UndoableAction) =>
-  !action.redo && (action.fromUser ?? true)
+  !action.redo && action.from === 'user'
 
 const applyAction = (
   action: Action,
@@ -28,6 +28,7 @@ const applyAction = (
           type: types.BATCH,
           redo: action,
           payload: batchUndoList.reverse(),
+          from: 'user',
         })
       }
       break
@@ -41,6 +42,7 @@ const applyAction = (
           type: types.REMOVE_LIST_ITEM,
           redo: action,
           payload: { id: action.payload.id },
+          from: 'user',
         })
       }
       break
@@ -62,6 +64,7 @@ const applyAction = (
           type: types.ADD_LIST_ITEM,
           redo: action,
           payload: { ...deletedItem, deleted: false },
+          from: 'user',
         })
       }
       break
@@ -73,6 +76,7 @@ const applyAction = (
           type: types.SET_LIST,
           redo: action,
           payload: oldList,
+          from: 'user',
         })
       }
 
@@ -96,6 +100,7 @@ const applyAction = (
           type: types.UPDATE_LIST_ITEM_VALUE,
           redo: action,
           payload: { id: action.payload.id, newValue: oldValue },
+          from: 'user',
         })
       }
       draft.items[id].value = action.payload.newValue
@@ -111,6 +116,7 @@ const applyAction = (
           type: types.UPDATE_LIST_ITEM_CHECKED,
           redo: action,
           payload: { id: action.payload.id, newChecked: oldChecked },
+          from: 'user',
         })
       }
 
@@ -131,7 +137,7 @@ const applyAction = (
         acc[item.id] = item
         return acc
       }, {})
-      if (action.fromIdbm) {
+      if (action.from === 'idbm') {
         draft.idbmLoaded = true
       }
       break

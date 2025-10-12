@@ -40,7 +40,7 @@ class WebSocketManager {
       if (this.dispatch) {
         this.dispatch({
           ...message,
-          fromUser: false,
+          from: 'server',
         })
       }
     }

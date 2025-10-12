@@ -94,8 +94,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         dispatch({
           type: 'INITIAL_FULL_DATA',
           payload: pendingItems,
-          fromUser: false,
-          fromIdbm: true,
+          from: 'idbm',
         })
       } else {
         // No notification, load from IndexedDB as usual
@@ -103,8 +102,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         dispatch({
           type: 'INITIAL_FULL_DATA',
           payload: Object.values(items),
-          fromUser: false,
-          fromIdbm: true,
+          from: 'idbm',
         })
       }
     })
