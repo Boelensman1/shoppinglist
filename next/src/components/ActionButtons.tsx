@@ -20,7 +20,7 @@ export default function ActionButtons({
   redoListLength,
   useMobileLayout,
 }: ActionButtonsProps) {
-  const { dispatch, state, pushSubRef } = useStore()
+  const { dispatch, state, pushSub } = useStore()
   const [showButtons, setShowButtons] = useState(false)
   const [signalSent, setSignalSent] = useState(false)
 
@@ -96,9 +96,9 @@ export default function ActionButtons({
               className="bg-purple-500 text-white p-2 rounded-full shadow-lg px-4"
               onClick={() => {
                 if (state.hasPushNotificationsSubscription) {
-                  pushSubRef.unsubscribe()
+                  pushSub.unsubscribe()
                 } else {
-                  pushSubRef.subscribe()
+                  pushSub.subscribe()
                 }
               }}
             >

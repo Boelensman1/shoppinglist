@@ -4,7 +4,6 @@ import {
   createContext,
   useContext,
   ReactNode,
-  useRef,
   useEffect,
   useState,
 } from 'react'
@@ -25,10 +24,14 @@ interface StoreContextValue {
   dispatch: (action: Action) => void
   wsm: WebSocketManager
   idbm: IndexedDbManager
-  pushSubRef: PushNotificationManager
+  pushSub: PushNotificationManager
 }
 
 const StoreContext = createContext<StoreContextValue | undefined>(undefined)
+
+const wsm = new WebSocketManager()
+const idbm = new IndexedDbManager()
+const pushSub = new PushNotificationManager()
 
 export const useStore = () => {
   const context = useContext(StoreContext)
@@ -41,15 +44,7 @@ export const useStore = () => {
 export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [syncWithServerRequestHandled, setSyncWithServerRequestHandled] =
     useState(true)
-  const wsmRef = useRef<WebSocketManager>(new WebSocketManager())
-  const idbmRef = useRef<IndexedDbManager>(new IndexedDbManager())
-  const pushSubRef = useRef<PushNotificationManager>(
-    new PushNotificationManager(),
-  )
-  const [state, dispatch] = useImmerReducer(
-    combinedReducer(wsmRef.current, idbmRef.current),
-    initial,
-  )
+  const [state, dispatch] = useImmerReducer(combinedReducer(wsm, idbm), initial)
 
   useEffect(() => {
     const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws'
@@ -59,7 +54,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
       : `${wsScheme}://${window.location.host}/${basePath ? basePath + '/' : ''}ws/`
 
     // Connect to WebSocket and pass the dispatch function
-    wsmRef.current.connect(wsUrl, dispatch)
+    wsm.connect(wsUrl, dispatch)
 
     // Set timeout for websocket to connect (this is the time the loading animtation plays before we give up)
     // Only set timeout if user is online
@@ -75,22 +70,22 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   }, [dispatch])
 
   useEffect(() => {
-    idbmRef.current.init().then(async () => {
-      let userId = await idbmRef.current.getUserId()
+    idbm.init().then(async () => {
+      let userId = await idbm.getUserId()
       if (!userId) {
         // no userId yet, generate one!
         userId = genUuidv4()
-        await idbmRef.current.saveUserId(userId)
+        await idbm.saveUserId(userId)
       }
       dispatch(actions.updateUserId(userId))
 
-      await pushSubRef.current.initialize(dispatch, userId)
+      await pushSub.initialize(dispatch, userId)
 
       // Check for pending notification data first
-      const pendingItems = await idbmRef.current.getPendingNotification()
+      const pendingItems = await idbm.getPendingNotification()
       if (pendingItems) {
         // Use notification data and clear it
-        await idbmRef.current.clearPendingNotification()
+        await idbm.clearPendingNotification()
         dispatch({
           type: 'INITIAL_FULL_DATA',
           payload: pendingItems,
@@ -98,7 +93,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         })
       } else {
         // No notification, load from IndexedDB as usual
-        const items = await idbmRef.current.getItems()
+        const items = await idbm.getItems()
         dispatch({
           type: 'INITIAL_FULL_DATA',
           payload: Object.values(items),
@@ -133,8 +128,10 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
       return
     }
 
+    // no risk for cascading re-renders, this effect is stable
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSyncWithServerRequestHandled(true)
-    wsmRef.current.syncWithServer()
+    wsm.syncWithServer()
   }, [state.webSocketState, state.idbmLoaded, syncWithServerRequestHandled])
 
   return (
@@ -142,9 +139,9 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
       value={{
         state,
         dispatch,
-        wsm: wsmRef.current,
-        idbm: idbmRef.current,
-        pushSubRef: pushSubRef.current,
+        wsm,
+        idbm,
+        pushSub,
       }}
     >
       {children}
