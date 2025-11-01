@@ -13,7 +13,7 @@ import { itemsToList } from '@/utils/itemsToList'
 
 export default function App() {
   const { state } = useStore()
-  const useMobileLayout = useMediaQuery('(max-width:624px)')
+  const useMobileLayout = useMediaQuery('(max-width:750px)')
 
   return (
     <div
