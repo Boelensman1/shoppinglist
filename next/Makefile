@@ -9,7 +9,7 @@ clean:
 	rm -rf node_modules
 
 build: $(INSTALL_DEPS) $(SRC_FILES) tsconfig.json next.config.ts tailwind.config.ts postcss.config.mjs
-	NEXT_TELEMETRY_DISABLED=1 npx next build
+	NEXT_TELEMETRY_DISABLED=1 npx next build --webpack
 	cp -r public build/standalone/ && cp -r build/static build/standalone/build/
 
 serve: build
