@@ -65,12 +65,16 @@ class PushNotificationManager {
       return
     }
 
+    const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+    if (!vapidKey) {
+      console.error('VAPID public key not configured')
+      return
+    }
+
     const registration = await navigator.serviceWorker.ready
     const sub = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(
-        process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-      ),
+      applicationServerKey: urlBase64ToUint8Array(vapidKey),
     })
 
     this.subscription = sub

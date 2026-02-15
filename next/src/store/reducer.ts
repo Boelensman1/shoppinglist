@@ -154,7 +154,9 @@ const applyAction = (
       draft.undoList.splice(index, 1)
 
       applyAction(action.payload, draft, undoList)
-      draft.redoList.push(action.payload.redo!)
+      if (action.payload.redo) {
+        draft.redoList.push(action.payload.redo)
+      }
       break
     }
     case types.REDO: {

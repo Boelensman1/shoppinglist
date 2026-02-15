@@ -3,6 +3,7 @@
 import {
   useEffect,
   useRef,
+  memo,
   ChangeEvent,
   KeyboardEvent,
   ClipboardEvent,
@@ -104,7 +105,10 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = (props) => {
       deleted: false,
     }))
 
-    const firstLine = lines.shift()!
+    const firstLine = lines.shift()
+    if (!firstLine) {
+      return
+    }
 
     // Determine the current selection in the input
     const input = event.target as HTMLInputElement
@@ -148,7 +152,6 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = (props) => {
       )}
       id={`sli-${props.id}`}
       layout
-      // initial={{ opacity: 0, y: -20 }}
       initial={false}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
@@ -159,7 +162,7 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = (props) => {
       }}
     >
       <input
-        type="radio"
+        type="checkbox"
         checked={props.checked}
         onMouseDown={(e) => e.preventDefault()}
         onClick={handleChecked}
@@ -185,4 +188,4 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = (props) => {
   )
 }
 
-export default ShoppingListItem
+export default memo(ShoppingListItem)

@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import ShoppingListItem from './ShoppingListItem'
 import type { ItemWithDisplayedInfo } from '@/utils/itemsToList'
@@ -23,4 +24,4 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ items }) => (
   </div>
 )
 
-export default ShoppingList
+export default memo(ShoppingList)
