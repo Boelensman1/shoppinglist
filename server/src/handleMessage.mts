@@ -4,14 +4,15 @@ import type Objection from 'objection'
 
 import WebSocket from 'ws'
 import ShoppingListEntry from './ShoppingListEntry.mjs'
-import ParsedMessage from './ParsedMessage.js'
+import type { ParsedMessage } from './schemas.mjs'
 import { insertInitial } from './index.mjs'
 import PushSubscriptionJSON from './PushSubscription.mjs'
+import { env } from './env.mjs'
 
 webpush.setVapidDetails(
   'mailto:me@wigger.email',
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!,
+  env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+  env.VAPID_PRIVATE_KEY,
 )
 
 const handleMessage = async (
@@ -64,10 +65,11 @@ const handleMessage = async (
         .patch({ value: parsedMessage.payload.newValue })
       return
     case 'UPDATE_LIST_ITEM_CHECKED':
-      await ShoppingListEntry.query().findById(parsedMessage.payload.id).patch({
-        checked: parsedMessage.payload.newChecked,
-      })
-
+      await ShoppingListEntry.query(inTransaction)
+        .findById(parsedMessage.payload.id)
+        .patch({
+          checked: parsedMessage.payload.newChecked,
+        })
       return
 
     case 'BATCH':

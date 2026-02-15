@@ -4,9 +4,10 @@ import WebSocket, { WebSocketServer } from 'ws'
 
 import ShoppingListEntry from './ShoppingListEntry.mjs'
 import handleMessage from './handleMessage.mjs'
-import ParsedMessage from './ParsedMessage.js'
+import { ParsedMessageSchema } from './schemas.mjs'
+import { env } from './env.mjs'
 
-const port: number = Number(process.env.PORT) || 1222
+const port: number = env.PORT
 
 const knex = Knex({
   client: 'better-sqlite3',
@@ -77,12 +78,42 @@ const main = async () => {
     console.log('A new client connected.')
 
     // Receiving message from client
-    ws.on('message', (message) => {
+    ws.on('message', async (message) => {
       const msgAsString = message.toString()
       broadcastMessage(ws, msgAsString)
-      const parsedMessage = JSON.parse(msgAsString) as unknown as ParsedMessage
 
-      handleMessage(ws, parsedMessage)
+      // Parse JSON first
+      let jsonData: unknown
+      try {
+        jsonData = JSON.parse(msgAsString)
+      } catch (error) {
+        console.error('Invalid JSON received:', error)
+        ws.send(JSON.stringify({ type: 'ERROR', message: 'Invalid JSON format' }))
+        return
+      }
+
+      // Validate with Zod
+      const result = ParsedMessageSchema.safeParse(jsonData)
+      if (!result.success) {
+        console.error('Invalid message format:', result.error)
+        ws.send(JSON.stringify({
+          type: 'ERROR',
+          message: 'Invalid message format',
+          errors: result.error.issues
+        }))
+        return
+      }
+
+      // Handle message with error handling
+      try {
+        await handleMessage(ws, result.data as any)
+      } catch (error) {
+        console.error('Error handling message:', error)
+        ws.send(JSON.stringify({
+          type: 'ERROR',
+          message: 'An error occurred while processing your request'
+        }))
+      }
     })
 
     ws.on('close', () => {
@@ -91,6 +122,34 @@ const main = async () => {
   })
 
   console.log(`WebSocket server is running on ws://0.0.0.0:${port}`)
+
+  // Graceful shutdown handlers
+  const shutdown = async (signal: string) => {
+    console.log(`\n${signal} received, shutting down gracefully...`)
+
+    // Close WebSocket server
+    wss.close(() => {
+      console.log('WebSocket server closed')
+    })
+
+    // Close all active connections
+    wss.clients.forEach((client) => {
+      client.close()
+    })
+
+    // Destroy database connection
+    try {
+      await knex.destroy()
+      console.log('Database connection closed')
+    } catch (error) {
+      console.error('Error closing database connection:', error)
+    }
+
+    process.exit(0)
+  }
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'))
+  process.on('SIGINT', () => shutdown('SIGINT'))
 }
 
 main()
