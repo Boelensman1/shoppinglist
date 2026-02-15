@@ -2,6 +2,8 @@ import type { Dispatch } from '../types/store/Dispatch'
 import type { Action } from '../types/store/Action'
 import actions from '../store/actions'
 
+const swDisabled = process.env.NEXT_PUBLIC_DISABLE_SW === '1'
+
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
@@ -19,10 +21,12 @@ class PushNotificationManager {
   private dispatch: Dispatch<Action> | null = null
   private userId: string | null = null
   private subscription: PushSubscription | null = null
-  private registration: ServiceWorkerRegistration | null = null
+  private serviceworker: ServiceWorkerRegistration | null = null
 
   get isSupported() {
-    return 'serviceWorker' in navigator && 'PushManager' in window
+    return (
+      'serviceWorker' in navigator && 'PushManager' in window && !swDisabled
+    )
   }
 
   async initialize(dispatch: Dispatch<Action>, userId: string) {
@@ -42,18 +46,11 @@ class PushNotificationManager {
     if (!this.dispatch) {
       return
     }
-    try {
-      this.registration = await navigator.serviceWorker.register('/sw.js', {
-        scope: '/',
-        updateViaCache: 'none',
-      })
-    } catch (error) {
-      console.error('Service worker registration failed:', error)
-      this.dispatch(actions.updateHasPushSubscription(false))
-      return
-    }
 
-    const sub = await this.registration.pushManager.getSubscription()
+    // no need to register, serwist handles this
+    this.serviceworker = await navigator.serviceWorker.ready
+
+    const sub = await this.serviceworker.pushManager.getSubscription()
     this.dispatch(actions.updateHasPushSubscription(Boolean(sub)))
     if (sub) {
       this.subscription = sub

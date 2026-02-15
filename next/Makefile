@@ -16,7 +16,7 @@ serve: build
 	node build/standalone/server.js
 
 dev: $(INSTALL_DEPS)
-	NEXT_TELEMETRY_DISABLED=1 PORT=4101 npx --no-install next dev --turbopack
+	NEXT_PUBLIC_DISABLE_SW=1 NEXT_TELEMETRY_DISABLED=1 PORT=4101 npx --no-install next dev --turbopack
 
 install: $(INSTALL_DEPS)
 
