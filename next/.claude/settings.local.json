@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Read(//Volumes/AeroFS/PersonalProjects/node/apps/shoppinglist/client/src/components/**)",
-      "Read(//Volumes/AeroFS/PersonalProjects/node/apps/shoppinglist/client/src/**)"
+      "Read(//Volumes/AeroFS/PersonalProjects/node/apps/shoppinglist/client/src/**)",
+      "Bash(command make test)",
+      "Bash(command make lint)"
     ],
     "deny": [],
     "ask": []
