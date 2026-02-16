@@ -1,5 +1,5 @@
 // tombstoned linked list
-import type { Item } from '@/types/store/Item'
+import type { Item } from '@shoppinglist/shared'
 import type { State } from '@/types/store/State'
 
 type ItemsWithPrevId = Map<Item['prevItemId'], Item['id'][]>

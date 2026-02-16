@@ -1,9 +1,13 @@
 SRC_FILES=$(shell find src/)
 
-build: $(SRC_FILES)
+dist: $(SRC_FILES)
 	pnpm build
+
+lint:
+	pnpm prettier --check .
+	pnpm tsc --noEmit
 
 dev:
 	pnpm tsc --watch
 
-.PHONY: dev
+.PHONY: dev lint

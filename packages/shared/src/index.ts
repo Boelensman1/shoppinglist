@@ -15,4 +15,9 @@ export {
   messageTypes,
 } from './schemas.js'
 
-export type { Item, ParsedMessage, ParsedMessageUndoable } from './types.js'
+export type {
+  Item,
+  ItemId,
+  ParsedMessage,
+  ParsedMessageUndoable,
+} from './types.js'

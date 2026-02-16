@@ -15,9 +15,11 @@
     "build": "tsc"
   },
   "dependencies": {
+    "type-fest": "^5.4.4",
     "zod": "^4.3.5"
   },
   "devDependencies": {
+    "prettier": "^3.8.1",
     "typescript": "^5.9.3"
   }
 }

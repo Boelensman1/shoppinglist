@@ -2,7 +2,7 @@ install:
 	pnpm install
 
 build-shared:
-	$(MAKE) -C packages/shared build
+	$(MAKE) -C packages/shared dist
 
 build-server: build-shared
 	$(MAKE) -C server build

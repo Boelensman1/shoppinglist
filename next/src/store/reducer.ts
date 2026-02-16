@@ -1,9 +1,9 @@
+import type { ItemId } from '@shoppinglist/shared'
 import type { State } from '../types/store/State'
 import type { Action } from '../types/store/Action'
 
 import { types } from './actions'
 import { UndoableAction } from '../types/store/Action'
-import { ItemId } from '../types/store/Item'
 
 const canUndo = (action: UndoableAction) =>
   !action.redo && action.from === 'user'

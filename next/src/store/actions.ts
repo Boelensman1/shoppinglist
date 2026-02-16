@@ -1,6 +1,5 @@
-import { messageTypes } from '@shoppinglist/shared'
+import { type Item, messageTypes } from '@shoppinglist/shared'
 import type { PushSubscription } from 'web-push'
-import { Item, ItemId } from '../types/store/Item'
 import genItemId from '../utils/genItemId'
 import type {
   AddListItemAction,
@@ -24,6 +23,7 @@ import type {
   FocusProcessedAction,
 } from '../types/store/Action'
 import { Action } from '../types/store/Action'
+import { ItemId } from '../../../packages/shared/dist/types'
 
 export const types = {
   ...messageTypes,

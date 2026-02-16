@@ -1,4 +1,4 @@
-import type { Item } from '@/types/store/Item'
+import type { Item } from '@shoppinglist/shared'
 import type { State } from '@/types/store/State'
 
 class IndexedDbManager {

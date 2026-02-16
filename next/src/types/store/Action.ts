@@ -1,6 +1,6 @@
 import type { PushSubscription } from 'web-push'
+import type { Item } from '@shoppinglist/shared'
 import type { types } from '../../store/actions'
-import type { Item } from './Item'
 import type { State } from './State'
 
 interface BaseAction {

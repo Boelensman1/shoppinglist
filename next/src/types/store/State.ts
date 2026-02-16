@@ -1,5 +1,5 @@
+import type { Item } from '@shoppinglist/shared'
 import type { UndoableAction } from './Action'
-import type { Item } from './Item'
 
 export interface State {
   userId: string

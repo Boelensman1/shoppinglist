@@ -9,7 +9,7 @@ export const ItemSchema = z.object({
   prevItemId: z.string(),
 })
 
-export type Item = z.infer<typeof ItemSchema>
+export type ItemFromSchema = z.infer<typeof ItemSchema>
 
 // PushSubscription schema (from web-push)
 const PushSubscriptionSchema = z.object({
@@ -24,9 +24,7 @@ const PushSubscriptionSchema = z.object({
 // Individual message schemas
 export const ParsedMessage_addItem = z.object({
   type: z.literal('ADD_LIST_ITEM'),
-  payload: ItemSchema.extend({
-    afterId: z.string(),
-  }),
+  payload: ItemSchema,
 })
 
 export const ParsedMessage_removeItem = z.object({
@@ -61,16 +59,18 @@ export const ParsedMessage_setList = z.object({
   payload: z.array(ItemSchema),
 })
 
-// For BATCH and SYNC_WITH_SERVER, we use z.any() for the recursive payload
-// The actual type safety comes from the TypeScript types in types.ts
 export const ParsedMessage_batch = z.object({
   type: z.literal('BATCH'),
-  payload: z.any(), // Will validate at runtime when recursively processed
+  get payload(): z.ZodArray<typeof ParsedMessageUndoableSchema> {
+    return z.array(ParsedMessageUndoableSchema)
+  },
 })
 
 export const ParsedMessage_syncWithServer = z.object({
   type: z.literal('SYNC_WITH_SERVER'),
-  payload: z.any(), // Will validate at runtime when recursively processed
+  get payload(): z.ZodArray<typeof ParsedMessageUndoableSchema> {
+    return z.array(ParsedMessageUndoableSchema)
+  },
 })
 
 export const ParsedMessage_signalFinishedShoppingList = z.object({
@@ -95,8 +95,7 @@ export const ParsedMessage_unSubscribeUserPushNotifications = z.object({
   }),
 })
 
-// Main ParsedMessage discriminated union schema (for runtime validation)
-export const ParsedMessageSchema = z.discriminatedUnion('type', [
+const parsedMessageUndoableList = [
   ParsedMessage_addItem,
   ParsedMessage_removeItem,
   ParsedMessage_updateValue,
@@ -104,11 +103,28 @@ export const ParsedMessageSchema = z.discriminatedUnion('type', [
   ParsedMessage_clearList,
   ParsedMessage_setList,
   ParsedMessage_batch,
+] as const
+
+const parsedMessageNotUndoableList = [
   ParsedMessage_syncWithServer,
   ParsedMessage_signalFinishedShoppingList,
   ParsedMessage_subscribeUserPushNotifications,
   ParsedMessage_unSubscribeUserPushNotifications,
+] as const
+
+const ParsedMessageUndoableSchema = z.discriminatedUnion('type', [
+  ...parsedMessageUndoableList,
+]) as z.ZodDiscriminatedUnion<typeof parsedMessageUndoableList>
+
+export const ParsedMessageSchema = z.discriminatedUnion('type', [
+  ...parsedMessageUndoableList,
+  ...parsedMessageNotUndoableList,
 ])
+
+export type ParsedMessageUndoableFromSchema = z.infer<
+  typeof ParsedMessageUndoableSchema
+>
+export type ParsedMessageFromSchema = z.infer<typeof ParsedMessageSchema>
 
 // Wire-protocol message type constants shared between client and server
 export const messageTypes = {

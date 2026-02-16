@@ -10,10 +10,10 @@ import {
 } from 'react'
 import clsx from 'clsx'
 import { motion } from 'framer-motion'
+import type { Item } from '@shoppinglist/shared'
 import { useStore } from '@/store/useStore'
 import actions from '@/store/actions'
 import genItemId from '@/utils/genItemId'
-import { Item } from '@/types/store/Item'
 import type { ItemWithDisplayedInfo } from '@/utils/itemsToList'
 
 const parsePasteLineValue = (line: string) => {

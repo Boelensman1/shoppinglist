@@ -2,9 +2,9 @@
 
 import clsx from 'clsx'
 import { useState } from 'react'
+import type { Item } from '@shoppinglist/shared'
 import { getUndoRedoStore } from './UndoRedoHandler'
 import actions from '../store/actions'
-import type { Item } from '../types/store/Item'
 import { useStore } from '../store/useStore'
 
 interface ActionButtonsProps {
