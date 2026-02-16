@@ -19,6 +19,8 @@ import IndexedDbManager from '../lib/IndexedDbManager'
 import PushNotificationManager from '../lib/PushNotificationManager'
 import actions from './actions'
 
+const IS_LOCAL = process.env.NEXT_PUBLIC_LOCAL === '1'
+
 interface StoreContextValue {
   state: State
   dispatch: (action: Action) => void
@@ -49,7 +51,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws'
     const basePath = window.location.pathname.replace(/\/$/, '')
-    const wsUrl = window.location.host.startsWith('localhost')
+    const wsUrl = IS_LOCAL
       ? 'ws://127.0.0.1:1222'
       : `${wsScheme}://${window.location.host}/${basePath ? basePath + '/' : ''}ws/`
 

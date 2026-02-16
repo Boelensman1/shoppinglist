@@ -11,7 +11,7 @@ serve: build
 	node build/standalone/server.js
 
 dev:
-	NEXT_PUBLIC_DISABLE_SW=1 NEXT_TELEMETRY_DISABLED=1 PORT=4101 pnpm --no-install next dev --turbopack
+	NEXT_PUBLIC_LOCAL=1 NEXT_PUBLIC_DISABLE_SW=1 NEXT_TELEMETRY_DISABLED=1 PORT=4101 pnpm --no-install next dev --turbopack
 
 test:
 	echo 'no tests yet'
