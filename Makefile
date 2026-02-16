@@ -1,21 +1,20 @@
+project_dir = $(or $(wildcard packages/$1),$1)
+
 install:
 	pnpm install
 
-build-shared:
-	$(MAKE) -C packages/shared dist
+build-%:
+	$(MAKE) -C $(call project_dir,$*) build
 
-build-server: build-shared
-	$(MAKE) -C server build
+build-server build-next: build-shared
 
-build-next: build-shared
-	$(MAKE) -C next build
+lint-%:
+	$(MAKE) -C $(call project_dir,$*) lint
 
-lint:
-	$(MAKE) -C server lint
-	$(MAKE) -C next lint
+test-%:
+	$(MAKE) -C $(call project_dir,$*) test
 
-test:
-	$(MAKE) -C server test
-	$(MAKE) -C next test
+lint: lint-shared lint-server lint-next
+test: test-server test-next
 
-.PHONY: install build-shared build-server build-next dev-shared lint test
+.PHONY: install lint test
