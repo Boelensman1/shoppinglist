@@ -4,7 +4,7 @@ import type Objection from 'objection'
 
 import WebSocket from 'ws'
 import ShoppingListEntry from './ShoppingListEntry.mjs'
-import type { ParsedMessage } from './schemas.mjs'
+import type { ParsedMessage } from '@shoppinglist/shared'
 import { insertInitial } from './index.mjs'
 import PushSubscriptionJSON from './PushSubscription.mjs'
 import { env } from './env.mjs'

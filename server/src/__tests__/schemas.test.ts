@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ParsedMessageSchema, ItemSchema } from '../schemas.mjs'
+import { ParsedMessageSchema, ItemSchema } from '@shoppinglist/shared'
 
 describe('ItemSchema', () => {
   it('should validate a valid item', () => {

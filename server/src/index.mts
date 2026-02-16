@@ -4,7 +4,7 @@ import WebSocket, { WebSocketServer } from 'ws'
 
 import ShoppingListEntry from './ShoppingListEntry.mjs'
 import handleMessage from './handleMessage.mjs'
-import { ParsedMessageSchema } from './schemas.mjs'
+import { ParsedMessageSchema } from '@shoppinglist/shared'
 import { env } from './env.mjs'
 
 const port: number = env.PORT
@@ -88,7 +88,9 @@ const main = async () => {
         jsonData = JSON.parse(msgAsString)
       } catch (error) {
         console.error('Invalid JSON received:', error)
-        ws.send(JSON.stringify({ type: 'ERROR', message: 'Invalid JSON format' }))
+        ws.send(
+          JSON.stringify({ type: 'ERROR', message: 'Invalid JSON format' }),
+        )
         return
       }
 
@@ -96,11 +98,13 @@ const main = async () => {
       const result = ParsedMessageSchema.safeParse(jsonData)
       if (!result.success) {
         console.error('Invalid message format:', result.error)
-        ws.send(JSON.stringify({
-          type: 'ERROR',
-          message: 'Invalid message format',
-          errors: result.error.issues
-        }))
+        ws.send(
+          JSON.stringify({
+            type: 'ERROR',
+            message: 'Invalid message format',
+            errors: result.error.issues,
+          }),
+        )
         return
       }
 
@@ -109,10 +113,12 @@ const main = async () => {
         await handleMessage(ws, result.data as any)
       } catch (error) {
         console.error('Error handling message:', error)
-        ws.send(JSON.stringify({
-          type: 'ERROR',
-          message: 'An error occurred while processing your request'
-        }))
+        ws.send(
+          JSON.stringify({
+            type: 'ERROR',
+            message: 'An error occurred while processing your request',
+          }),
+        )
       }
     })
 

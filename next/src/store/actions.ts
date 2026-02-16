@@ -1,3 +1,4 @@
+import { messageTypes } from '@shoppinglist/shared'
 import type { PushSubscription } from 'web-push'
 import { Item, ItemId } from '../types/store/Item'
 import genItemId from '../utils/genItemId'
@@ -25,29 +26,11 @@ import type {
 import { Action } from '../types/store/Action'
 
 export const types = {
-  ADD_LIST_ITEM: 'ADD_LIST_ITEM' as const,
-  REMOVE_LIST_ITEM: 'REMOVE_LIST_ITEM' as const,
-  UPDATE_LIST_ITEM_VALUE: 'UPDATE_LIST_ITEM_VALUE' as const,
-  UPDATE_LIST_ITEM_CHECKED: 'UPDATE_LIST_ITEM_CHECKED' as const,
-  CLEAR_LIST: 'CLEAR_LIST' as const,
-  SET_LIST: 'SET_LIST' as const,
-  BATCH: 'BATCH' as const,
+  ...messageTypes,
 
+  // Client-only types
   UNDO: 'UNDO' as const,
   REDO: 'REDO' as const,
-
-  // User actions sent to server (from: 'user')
-  SYNC_WITH_SERVER: 'SYNC_WITH_SERVER' as const,
-  SIGNAL_FINISHED_SHOPPINGLIST: 'SIGNAL_FINISHED_SHOPPINGLIST' as const,
-  SUBSCRIBE_USER_PUSH_NOTIFICATIONS:
-    'SUBSCRIBE_USER_PUSH_NOTIFICATIONS' as const,
-  UNSUBSCRIBE_USER_PUSH_NOTIFICATIONS:
-    'UNSUBSCRIBE_USER_PUSH_NOTIFICATIONS' as const,
-
-  // Server actions (from: 'server')
-  INITIAL_FULL_DATA: 'INITIAL_FULL_DATA' as const,
-
-  // Internal actions not sent to server (from: 'internal')
   WEBSOCKET_CONNECTIONSTATE_CHANGED:
     'WEBSOCKET_CONNECTIONSTATE_CHANGED' as const,
   WEBSOCKET_CONNECTION_TIMEOUT_EXCEEDED:
@@ -55,8 +38,6 @@ export const types = {
   UPDATE_HAS_PUSH_SUBSCRIPTION: 'UPDATE_HAS_PUSH_SUBSCRIPTION' as const,
   UPDATE_CAN_SUBSCRIBE: 'UPDATE_CAN_SUBSCRIBE' as const,
   FOCUS_PROCESSED: 'FOCUS_PROCESSED' as const,
-
-  // IndexedDB actions (from: 'idbm')
   UPDATE_USER_ID: 'UPDATE_USER_ID' as const,
 }
 

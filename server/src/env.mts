@@ -2,7 +2,9 @@ import { z } from 'zod'
 
 const envSchema = z.object({
   PORT: z.string().optional().default('1222').transform(Number),
-  NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().min(1, 'NEXT_PUBLIC_VAPID_PUBLIC_KEY is required'),
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: z
+    .string()
+    .min(1, 'NEXT_PUBLIC_VAPID_PUBLIC_KEY is required'),
   VAPID_PRIVATE_KEY: z.string().min(1, 'VAPID_PRIVATE_KEY is required'),
 })
 

@@ -1,31 +1,25 @@
-INSTALL_DEPS=node_modules
 SRC_FILES=$(shell find src/)
-
-node_modules: package.json
-	npm ci
-	@if [ -e node_modules ]; then touch node_modules; fi
 
 clean:
 	rm -rf node_modules
 
-build: $(INSTALL_DEPS) $(SRC_FILES) tsconfig.json next.config.ts tailwind.config.ts postcss.config.mjs
-	NEXT_TELEMETRY_DISABLED=1 npx next build --webpack
+build: $(SRC_FILES) tsconfig.json next.config.ts tailwind.config.ts postcss.config.mjs
+	NEXT_TELEMETRY_DISABLED=1 pnpm next build --webpack
 	cp -r public build/standalone/ && cp -r build/static build/standalone/build/
 
 serve: build
 	node build/standalone/server.js
 
-dev: $(INSTALL_DEPS)
-	NEXT_PUBLIC_DISABLE_SW=1 NEXT_TELEMETRY_DISABLED=1 PORT=4101 npx --no-install next dev --turbopack
+dev:
+	NEXT_PUBLIC_DISABLE_SW=1 NEXT_TELEMETRY_DISABLED=1 PORT=4101 pnpm --no-install next dev --turbopack
 
-install: $(INSTALL_DEPS)
+test:
+	echo 'no tests yet'
+	#pnpm vitest
 
-test: $(INSTALL_DEPS)
-	npx vitest
+lint:
+	pnpm --no-install prettier --check .
+	pnpm --no-install eslint
+	pnpm --no-install tsc --noEmit
 
-lint: $(INSTALL_DEPS)
-	npx --no-install prettier --check .
-	npx --no-install eslint
-	npx --no-install tsc --noEmit
-
-.PHONY: dev install clean lint test
+.PHONY: dev clean lint test

@@ -1,19 +1,16 @@
 SRC_FILES=$(shell find src/)
 
-node_modules: package.json package-lock.json
-	npm ci
+build: $(SRC_FILES)
+	pnpm tsc
 
-build: node_modules $(SRC_FILES)
-	npx tsc
+lint:
+	pnpm prettier --check .
+	pnpm tsc --noEmit
 
-lint: node_modules
-	npx prettier --check .
-	npx tsc --noEmit
-
-test: node_modules
+test:
 	npm test
 
 dev:
-	npx tsx watch ./src/index.mts
+	pnpm tsx watch ./src/index.mts
 
-.PHONY: dev lint test prod
+.PHONY: dev lint test

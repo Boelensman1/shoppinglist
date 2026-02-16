@@ -1,11 +1,9 @@
+import type { Item as SharedItem } from '@shoppinglist/shared'
 import type { Tagged } from 'type-fest'
 
 export type ItemId = Tagged<'ItemId', string>
 
-export interface Item {
+export interface Item extends Omit<SharedItem, 'id' | 'prevItemId'> {
   id: ItemId
-  value: string
-  checked: boolean
-  deleted: boolean
   prevItemId: ItemId | 'HEAD'
 }

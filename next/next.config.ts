@@ -21,6 +21,7 @@ const nextConfig: NextConfig = {
   distDir: 'build',
   output: isProd ? 'standalone' : undefined,
   allowedDevOrigins: ['localhost', '127.0.0.1'],
+  transpilePackages: ['@shoppinglist/shared'],
 }
 
 export default withSerwist(nextConfig)

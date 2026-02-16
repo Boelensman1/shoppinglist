@@ -22,21 +22,21 @@ const PushSubscriptionSchema = z.object({
 })
 
 // Individual message schemas
-const ParsedMessage_addItem = z.object({
+export const ParsedMessage_addItem = z.object({
   type: z.literal('ADD_LIST_ITEM'),
   payload: ItemSchema.extend({
     afterId: z.string(),
   }),
 })
 
-const ParsedMessage_removeItem = z.object({
+export const ParsedMessage_removeItem = z.object({
   type: z.literal('REMOVE_LIST_ITEM'),
   payload: z.object({
     id: z.string(),
   }),
 })
 
-const ParsedMessage_updateValue = z.object({
+export const ParsedMessage_updateValue = z.object({
   type: z.literal('UPDATE_LIST_ITEM_VALUE'),
   payload: z.object({
     id: z.string(),
@@ -44,7 +44,7 @@ const ParsedMessage_updateValue = z.object({
   }),
 })
 
-const ParsedMessage_updateChecked = z.object({
+export const ParsedMessage_updateChecked = z.object({
   type: z.literal('UPDATE_LIST_ITEM_CHECKED'),
   payload: z.object({
     id: z.string(),
@@ -52,35 +52,35 @@ const ParsedMessage_updateChecked = z.object({
   }),
 })
 
-const ParsedMessage_clearList = z.object({
+export const ParsedMessage_clearList = z.object({
   type: z.literal('CLEAR_LIST'),
 })
 
-const ParsedMessage_setList = z.object({
+export const ParsedMessage_setList = z.object({
   type: z.literal('SET_LIST'),
   payload: z.array(ItemSchema),
 })
 
 // For BATCH and SYNC_WITH_SERVER, we use z.any() for the recursive payload
-// The actual type safety comes from the TypeScript types below
-const ParsedMessage_batch = z.object({
+// The actual type safety comes from the TypeScript types in types.ts
+export const ParsedMessage_batch = z.object({
   type: z.literal('BATCH'),
   payload: z.any(), // Will validate at runtime when recursively processed
 })
 
-const ParsedMessage_syncWithServer = z.object({
+export const ParsedMessage_syncWithServer = z.object({
   type: z.literal('SYNC_WITH_SERVER'),
   payload: z.any(), // Will validate at runtime when recursively processed
 })
 
-const ParsedMessage_signalFinishedShoppingList = z.object({
+export const ParsedMessage_signalFinishedShoppingList = z.object({
   type: z.literal('SIGNAL_FINISHED_SHOPPINGLIST'),
   payload: z.object({
     userId: z.string(),
   }),
 })
 
-const ParsedMessage_subscribeUserPushNotifications = z.object({
+export const ParsedMessage_subscribeUserPushNotifications = z.object({
   type: z.literal('SUBSCRIBE_USER_PUSH_NOTIFICATIONS'),
   payload: z.object({
     userId: z.string(),
@@ -88,7 +88,7 @@ const ParsedMessage_subscribeUserPushNotifications = z.object({
   }),
 })
 
-const ParsedMessage_unSubscribeUserPushNotifications = z.object({
+export const ParsedMessage_unSubscribeUserPushNotifications = z.object({
   type: z.literal('UNSUBSCRIBE_USER_PUSH_NOTIFICATIONS'),
   payload: z.object({
     userId: z.string(),
@@ -110,21 +110,20 @@ export const ParsedMessageSchema = z.discriminatedUnion('type', [
   ParsedMessage_unSubscribeUserPushNotifications,
 ])
 
-// TypeScript types (with proper recursive types for compile-time safety)
-export type ParsedMessageUndoable =
-  | { type: 'ADD_LIST_ITEM'; payload: Item & { afterId: string } }
-  | { type: 'REMOVE_LIST_ITEM'; payload: { id: string } }
-  | { type: 'UPDATE_LIST_ITEM_VALUE'; payload: { id: string; newValue: string } }
-  | { type: 'UPDATE_LIST_ITEM_CHECKED'; payload: { id: string; newChecked: boolean } }
-  | { type: 'CLEAR_LIST' }
-  | { type: 'SET_LIST'; payload: Item[] }
-  | { type: 'BATCH'; payload: ParsedMessageUndoable[] }
-
-export type ParsedMessage =
-  | ParsedMessageUndoable
-  | { type: 'SYNC_WITH_SERVER'; payload: ParsedMessageUndoable[] }
-  | { type: 'SIGNAL_FINISHED_SHOPPINGLIST'; payload: { userId: string } }
-  | { type: 'SUBSCRIBE_USER_PUSH_NOTIFICATIONS'; payload: { userId: string; subscription: any } }
-  | { type: 'UNSUBSCRIBE_USER_PUSH_NOTIFICATIONS'; payload: { userId: string } }
-
-export default ParsedMessage
+// Wire-protocol message type constants shared between client and server
+export const messageTypes = {
+  ADD_LIST_ITEM: 'ADD_LIST_ITEM' as const,
+  REMOVE_LIST_ITEM: 'REMOVE_LIST_ITEM' as const,
+  UPDATE_LIST_ITEM_VALUE: 'UPDATE_LIST_ITEM_VALUE' as const,
+  UPDATE_LIST_ITEM_CHECKED: 'UPDATE_LIST_ITEM_CHECKED' as const,
+  CLEAR_LIST: 'CLEAR_LIST' as const,
+  SET_LIST: 'SET_LIST' as const,
+  BATCH: 'BATCH' as const,
+  SYNC_WITH_SERVER: 'SYNC_WITH_SERVER' as const,
+  SIGNAL_FINISHED_SHOPPINGLIST: 'SIGNAL_FINISHED_SHOPPINGLIST' as const,
+  SUBSCRIBE_USER_PUSH_NOTIFICATIONS:
+    'SUBSCRIBE_USER_PUSH_NOTIFICATIONS' as const,
+  UNSUBSCRIBE_USER_PUSH_NOTIFICATIONS:
+    'UNSUBSCRIBE_USER_PUSH_NOTIFICATIONS' as const,
+  INITIAL_FULL_DATA: 'INITIAL_FULL_DATA' as const,
+}

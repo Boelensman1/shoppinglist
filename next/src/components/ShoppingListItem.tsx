@@ -175,7 +175,7 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = (props) => {
           type="text"
           placeholder="Nieuw item..."
           value={props.value}
-          onInput={handleInput}
+          onChange={handleInput}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
           className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"

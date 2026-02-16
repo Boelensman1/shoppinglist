@@ -25,6 +25,7 @@
     "vitest": "^4.0.17"
   },
   "dependencies": {
+    "@shoppinglist/shared": "workspace:*",
     "better-sqlite3": "^12.6.2",
     "dotenv": "^17.2.3",
     "objection": "^3.1.5",
