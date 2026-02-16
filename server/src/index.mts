@@ -4,7 +4,7 @@ import WebSocket, { WebSocketServer } from 'ws'
 
 import ShoppingListEntry from './ShoppingListEntry.mjs'
 import handleMessage from './handleMessage.mjs'
-import { ParsedMessageSchema } from '@shoppinglist/shared'
+import { ItemId, ParsedMessageSchema } from '@shoppinglist/shared'
 import { env } from './env.mjs'
 
 const port: number = env.PORT
@@ -22,7 +22,7 @@ Model.knex(knex)
 export const insertInitial = (trx?: Transaction) =>
   ShoppingListEntry.query(trx)
     .insert({
-      id: 'INITIAL',
+      id: 'INITIAL' as ItemId,
       value: '',
       checked: false,
       deleted: false,

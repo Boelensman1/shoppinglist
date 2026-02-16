@@ -57,9 +57,9 @@ const actions = {
     }),
 
   removeListItem: (payload: {
-    id: string
-    displayedPrevItemId?: string
-    displayedNextItemId?: string
+    id: ItemId
+    displayedPrevItemId?: ItemId
+    displayedNextItemId?: ItemId
   }): RemoveListItemAction => ({
     type: types.REMOVE_LIST_ITEM,
     payload,
@@ -94,7 +94,7 @@ const actions = {
     // Remove all checked items
     batchActions.push(
       ...checkedItemIds.map(
-        (id: string): RemoveListItemAction => ({
+        (id): RemoveListItemAction => ({
           type: types.REMOVE_LIST_ITEM,
           payload: { id },
           from: 'user',
@@ -123,7 +123,7 @@ const actions = {
     }
   },
   updateListItemValue: (
-    id: string,
+    id: ItemId,
     newValue: string,
   ): UpdateListItemValueAction => ({
     type: types.UPDATE_LIST_ITEM_VALUE,
@@ -131,7 +131,7 @@ const actions = {
     from: 'user',
   }),
   updateListItemChecked: (
-    id: string,
+    id: ItemId,
     newChecked: boolean,
   ): UpdateListItemCheckedAction => ({
     type: types.UPDATE_LIST_ITEM_CHECKED,

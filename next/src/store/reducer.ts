@@ -80,9 +80,10 @@ const applyAction = (
         })
       }
 
+      const initialItemId = 'INITIAL' as ItemId
       draft.items = {
-        INITIAL: {
-          id: 'INITIAL' as ItemId,
+        [initialItemId]: {
+          id: initialItemId,
           value: '',
           prevItemId: 'HEAD',
           checked: false,
@@ -135,10 +136,7 @@ const applyAction = (
     case types.INITIAL_FULL_DATA: {
       // check that we don't overwrite the server data with idbm data
       if (action.from !== 'idbm' || draft.serverLoaded !== true) {
-        draft.items = action.payload.reduce<State['items']>((acc, item) => {
-          acc[item.id] = item
-          return acc
-        }, {})
+        draft.items = action.payload
       }
 
       if (action.from === 'idbm') {

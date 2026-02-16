@@ -1,12 +1,12 @@
 // tombstoned linked list
-import type { Item } from '@shoppinglist/shared'
+import type { Item, ItemId } from '@shoppinglist/shared'
 import type { State } from '@/types/store/State'
 
 type ItemsWithPrevId = Map<Item['prevItemId'], Item['id'][]>
 
 export type ItemWithDisplayedInfo = Item & {
-  displayedPrevItemId?: string
-  displayedNextItemId?: string
+  displayedPrevItemId?: ItemId
+  displayedNextItemId?: ItemId
 }
 
 const addItemsToList = (

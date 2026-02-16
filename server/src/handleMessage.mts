@@ -4,7 +4,12 @@ import type Objection from 'objection'
 
 import WebSocket from 'ws'
 import ShoppingListEntry from './ShoppingListEntry.mjs'
-import type { ParsedMessage } from '@shoppinglist/shared'
+import {
+  itemsListToRecords,
+  type Item,
+  type ParsedMessage,
+  type ParsedMessage_initialFullData,
+} from '@shoppinglist/shared'
 import { insertInitial } from './index.mjs'
 import PushSubscriptionJSON from './PushSubscription.mjs'
 import { env } from './env.mjs'
@@ -35,8 +40,8 @@ const handleMessage = async (
       ws.send(
         JSON.stringify({
           type: 'INITIAL_FULL_DATA',
-          payload: results.map((r) => r.toJSON()),
-        }),
+          payload: itemsListToRecords(results.map((r) => r.toJSON() as Item)),
+        } as ParsedMessage_initialFullData),
       )
       return
     }
@@ -45,9 +50,8 @@ const handleMessage = async (
       await ShoppingListEntry.transaction(
         inTransaction ?? ShoppingListEntry.knex(),
         async (trx) => {
-          const { afterId, ...item } = parsedMessage.payload
           await ShoppingListEntry.query(trx)
-            .insert(item)
+            .insert(parsedMessage.payload)
             .onConflict('id')
             .merge()
         },
@@ -102,7 +106,7 @@ const handleMessage = async (
         async (trx) => {
           await trx.table('shoppingListEntries').truncate()
           await Promise.all(
-            parsedMessage.payload.map((item) =>
+            Object.values(parsedMessage.payload).map((item) =>
               ShoppingListEntry.query(trx).insert(item),
             ),
           )

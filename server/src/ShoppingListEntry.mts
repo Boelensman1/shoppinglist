@@ -1,10 +1,12 @@
-import { Model, Pojo } from 'objection'
+import { JSONSchema, Model, Pojo } from 'objection'
+import z from 'zod'
+import { ItemId, ItemSchema } from '@shoppinglist/shared'
 
 class ShoppingListEntry extends Model {
-  id!: string
+  id!: ItemId
   value!: string
   checked!: boolean
-  prevItemId!: string
+  prevItemId!: ItemId | 'HEAD'
   deleted!: boolean
   createdAt!: string
   updatedAt?: string
@@ -25,20 +27,7 @@ class ShoppingListEntry extends Model {
   }
 
   static get jsonSchema() {
-    return {
-      type: 'object',
-      required: ['id', 'value', 'checked', 'deleted', 'prevItemId'],
-
-      properties: {
-        id: { type: 'string' },
-        value: { type: 'string' },
-        checked: { type: 'boolean' },
-        deleted: { type: 'boolean' },
-        prevItemId: { type: 'string' },
-        createdAt: { type: 'string', format: 'date-time' },
-        updatedAt: { type: ['string', 'null'], format: 'date-time' },
-      },
-    }
+    return z.toJSONSchema(ItemSchema) as JSONSchema
   }
 }
 

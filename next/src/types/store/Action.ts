@@ -1,5 +1,17 @@
-import type { PushSubscription } from 'web-push'
-import type { Item } from '@shoppinglist/shared'
+import type {
+  ParsedMessage_addItem,
+  ParsedMessage_batch,
+  ParsedMessage_clearList,
+  ParsedMessage_initialFullData,
+  ParsedMessage_removeItem,
+  ParsedMessage_setList,
+  ParsedMessage_signalFinishedShoppingList,
+  ParsedMessage_subscribeUserPushNotifications,
+  ParsedMessage_syncWithServer,
+  ParsedMessage_unSubscribeUserPushNotifications,
+  ParsedMessage_updateChecked,
+  ParsedMessage_updateValue,
+} from '@shoppinglist/shared'
 import type { types } from '../../store/actions'
 import type { State } from './State'
 
@@ -11,61 +23,30 @@ interface BaseAction {
   from: 'user' | 'server' | 'idbm' | 'internal'
 }
 
-export interface RemoveListItemAction extends BaseAction {
-  type: typeof types.REMOVE_LIST_ITEM
+interface RedoableBaseAction extends BaseAction {
   redo?: UndoableAction
-  payload: {
-    id: string
-    displayedPrevItemId?: string
-    displayedNextItemId?: string
+}
+
+export type RemoveListItemAction = RedoableBaseAction & ParsedMessage_removeItem
+
+export type ClearListAction = RedoableBaseAction & ParsedMessage_clearList
+
+export type AddListItemAction = RedoableBaseAction & ParsedMessage_addItem
+
+export type UpdateListItemValueAction = RedoableBaseAction &
+  ParsedMessage_updateValue
+
+export type UpdateListItemCheckedAction = RedoableBaseAction &
+  ParsedMessage_updateChecked
+
+export type SyncWithServerAction = BaseAction & ParsedMessage_syncWithServer
+
+export type InitialFullDataAction = BaseAction &
+  ParsedMessage_initialFullData & {
+    from: 'server' | 'idbm'
   }
-}
 
-export interface ClearListAction extends BaseAction {
-  type: typeof types.CLEAR_LIST
-  redo?: UndoableAction
-}
-
-export interface AddListItemAction extends BaseAction {
-  type: typeof types.ADD_LIST_ITEM
-  redo?: UndoableAction
-  payload: Item
-}
-
-export interface UpdateListItemValueAction extends BaseAction {
-  type: typeof types.UPDATE_LIST_ITEM_VALUE
-  redo?: UndoableAction
-  payload: {
-    id: string
-    newValue: string
-  }
-}
-
-export interface UpdateListItemCheckedAction extends BaseAction {
-  type: typeof types.UPDATE_LIST_ITEM_CHECKED
-  redo?: UndoableAction
-  payload: {
-    id: string
-    newChecked: boolean
-  }
-}
-
-export interface SyncWithServerAction extends BaseAction {
-  type: typeof types.SYNC_WITH_SERVER
-  payload: UndoableAction[]
-}
-
-export interface InitialFullDataAction extends BaseAction {
-  type: typeof types.INITIAL_FULL_DATA
-  payload: Item[]
-  from: 'server' | 'idbm'
-}
-
-export interface SetListAction extends BaseAction {
-  type: typeof types.SET_LIST
-  payload: State['items']
-  redo?: UndoableAction
-}
+export type SetListAction = RedoableBaseAction & ParsedMessage_setList
 
 export interface UndoAction extends BaseAction {
   type: typeof types.UNDO
@@ -86,26 +67,19 @@ export interface WebsocketConnectionTimeoutExceeded extends BaseAction {
   type: typeof types.WEBSOCKET_CONNECTION_TIMEOUT_EXCEEDED
 }
 
-export interface BatchAction extends BaseAction {
-  type: typeof types.BATCH
-  redo?: UndoableAction
-  payload: UndoableAction[]
-}
+export type BatchAction = RedoableBaseAction &
+  Omit<ParsedMessage_batch, 'payload'> & {
+    payload: UndoableAction[]
+  }
 
-export interface SignalFinishedShoppingList extends BaseAction {
-  type: typeof types.SIGNAL_FINISHED_SHOPPINGLIST
-  payload: { userId: string }
-}
+export type SignalFinishedShoppingList = BaseAction &
+  ParsedMessage_signalFinishedShoppingList
 
-export interface SubscribeUserPushNotifications extends BaseAction {
-  type: typeof types.SUBSCRIBE_USER_PUSH_NOTIFICATIONS
-  payload: { userId: string; subscription: PushSubscription }
-}
+export type SubscribeUserPushNotifications = BaseAction &
+  ParsedMessage_subscribeUserPushNotifications
 
-export interface UnSubscribeUserPushNotifications extends BaseAction {
-  type: typeof types.UNSUBSCRIBE_USER_PUSH_NOTIFICATIONS
-  payload: { userId: string }
-}
+export type UnSubscribeUserPushNotifications = BaseAction &
+  ParsedMessage_unSubscribeUserPushNotifications
 
 export interface UpdateUserIdAction extends BaseAction {
   type: typeof types.UPDATE_USER_ID

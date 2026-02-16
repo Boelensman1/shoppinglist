@@ -17,7 +17,8 @@ import { combinedReducer } from './combinedReducer'
 import WebSocketManager from '../lib/WebSocketManager'
 import IndexedDbManager from '../lib/IndexedDbManager'
 import PushNotificationManager from '../lib/PushNotificationManager'
-import actions from './actions'
+import actions, { types } from './actions'
+import { itemsListToRecords } from '@shoppinglist/shared'
 
 const IS_LOCAL = process.env.NEXT_PUBLIC_LOCAL === '1'
 
@@ -89,16 +90,16 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         // Use notification data and clear it
         await idbm.clearPendingNotification()
         dispatch({
-          type: 'INITIAL_FULL_DATA',
-          payload: pendingItems,
+          type: types.INITIAL_FULL_DATA,
+          payload: itemsListToRecords(pendingItems),
           from: 'idbm',
         })
       } else {
         // No notification, load from IndexedDB as usual
         const items = await idbm.getItems()
         dispatch({
-          type: 'INITIAL_FULL_DATA',
-          payload: Object.values(items),
+          type: types.INITIAL_FULL_DATA,
+          payload: items,
           from: 'idbm',
         })
       }

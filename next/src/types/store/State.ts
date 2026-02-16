@@ -1,9 +1,9 @@
-import type { Item } from '@shoppinglist/shared'
+import type { ItemRecords } from '@shoppinglist/shared'
 import type { UndoableAction } from './Action'
 
 export interface State {
   userId: string
-  items: Record<string, Item>
+  items: ItemRecords
   focusTargetId: string | null
   idbmLoaded: boolean
   serverLoaded: boolean
