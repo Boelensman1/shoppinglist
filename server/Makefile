@@ -16,10 +16,10 @@ lint: $(INSTALL_DEPS)
 	pnpm prettier --check .
 	pnpm tsc --noEmit
 
-test:
+test: $(INSTALL_DEPS)
 	npm test
 
-dev:
+dev: $(INSTALL_DEPS)
 	pnpm tsx watch ./src/index.mts
 
 ../packages/shared/build: FORCE
