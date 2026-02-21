@@ -2,7 +2,6 @@ import type { NextConfig } from 'next'
 import { spawnSync } from 'node:child_process'
 import withSerwistInit from '@serwist/next'
 
-const isProd = process.env.NODE_ENV === 'production'
 const swDisabled = process.env.NEXT_PUBLIC_DISABLE_SW === '1'
 
 const revision = swDisabled
@@ -19,7 +18,6 @@ const withSerwist = withSerwistInit({
 
 const nextConfig: NextConfig = {
   distDir: 'build',
-  output: isProd ? 'standalone' : undefined,
   allowedDevOrigins: ['localhost', '127.0.0.1'],
   transpilePackages: ['@shoppinglist/shared', 'server'],
 }

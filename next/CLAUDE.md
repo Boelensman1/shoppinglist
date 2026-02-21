@@ -46,7 +46,7 @@ For all the make commands, it's extremely important to use the command binary be
 
 The project uses a Makefile for build orchestration with proper dependency tracking. All commands disable Next.js telemetry via `NEXT_TELEMETRY_DISABLED=1`.
 
-**Important**: The build output directory is customized to `build/` (not `.next/`), configured in next.config.ts with `distDir: 'build'`. Production builds use standalone output mode.
+**Important**: The build output directory is customized to `build/` (not `.next/`), configured in next.config.ts with `distDir: 'build'`.
 
 ### Code Standards
 
