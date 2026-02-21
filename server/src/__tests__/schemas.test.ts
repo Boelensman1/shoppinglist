@@ -50,7 +50,6 @@ describe('ParsedMessageSchema', () => {
           checked: false,
           deleted: false,
           prevItemId: 'INITIAL',
-          afterId: 'INITIAL',
         },
       }
 
@@ -58,7 +57,7 @@ describe('ParsedMessageSchema', () => {
       expect(result.success).toBe(true)
     })
 
-    it('should reject ADD_LIST_ITEM without afterId', () => {
+    it('should reject ADD_LIST_ITEM without prevItemId', () => {
       const invalidMessage = {
         type: 'ADD_LIST_ITEM',
         payload: {
@@ -66,7 +65,6 @@ describe('ParsedMessageSchema', () => {
           value: 'Milk',
           checked: false,
           deleted: false,
-          prevItemId: 'INITIAL',
         },
       }
 
@@ -156,7 +154,6 @@ describe('ParsedMessageSchema', () => {
               checked: false,
               deleted: false,
               prevItemId: 'INITIAL',
-              afterId: 'INITIAL',
             },
           },
           {
