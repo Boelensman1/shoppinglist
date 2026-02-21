@@ -26,7 +26,7 @@ node_modules: ../server/build
 ../server/build: FORCE
 	$(MAKE) -C ../server build
 
-lint: install
+lint: $(INSTALL_DEPS)
 	pnpm --no-install prettier --check .
 	pnpm --no-install eslint
 	pnpm --no-install tsc --noEmit
