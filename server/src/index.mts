@@ -1,11 +1,13 @@
 import { Model, Transaction } from 'objection'
 import Knex from 'knex'
-import WebSocket, { WebSocketServer } from 'ws'
+import { WebSocketServer } from 'ws'
+import { applyWSSHandler } from '@trpc/server/adapters/ws'
 
 import ShoppingListEntry from './ShoppingListEntry.mjs'
-import handleMessage from './handleMessage.mjs'
-import { ItemId, ParsedMessageSchema } from '@shoppinglist/shared'
+import { ItemId } from '@shoppinglist/shared'
 import { env } from './env.mjs'
+import { appRouter } from './router.mjs'
+import { createContext } from './trpc.mjs'
 
 const port: number = env.PORT
 
@@ -66,72 +68,24 @@ const main = async () => {
     port,
   })
 
-  const broadcastMessage = (senderWs: WebSocket, message: string) => {
-    wss.clients.forEach((client) => {
-      if (client !== senderWs && client.readyState === WebSocket.OPEN) {
-        client.send(message)
-      }
-    })
-  }
-
-  wss.on('connection', (ws) => {
-    console.log('A new client connected.')
-
-    // Receiving message from client
-    ws.on('message', async (message) => {
-      const msgAsString = message.toString()
-      broadcastMessage(ws, msgAsString)
-
-      // Parse JSON first
-      let jsonData: unknown
-      try {
-        jsonData = JSON.parse(msgAsString)
-      } catch (error) {
-        console.error('Invalid JSON received:', error)
-        ws.send(
-          JSON.stringify({ type: 'ERROR', message: 'Invalid JSON format' }),
-        )
-        return
-      }
-
-      // Validate with Zod
-      const result = ParsedMessageSchema.safeParse(jsonData)
-      if (!result.success) {
-        console.error('Invalid message format:', result.error)
-        ws.send(
-          JSON.stringify({
-            type: 'ERROR',
-            message: 'Invalid message format',
-            errors: result.error.issues,
-          }),
-        )
-        return
-      }
-
-      // Handle message with error handling
-      try {
-        await handleMessage(ws, result.data as any)
-      } catch (error) {
-        console.error('Error handling message:', error)
-        ws.send(
-          JSON.stringify({
-            type: 'ERROR',
-            message: 'An error occurred while processing your request',
-          }),
-        )
-      }
-    })
-
-    ws.on('close', () => {
-      console.log('A client disconnected.')
-    })
+  const handler = applyWSSHandler({
+    wss,
+    router: appRouter,
+    createContext,
+    keepAlive: {
+      enabled: true,
+      pingMs: 30_000,
+      pongWaitMs: 5_000,
+    },
   })
 
-  console.log(`WebSocket server is running on ws://0.0.0.0:${port}`)
+  console.log(`tRPC WebSocket server is running on ws://0.0.0.0:${port}`)
 
   // Graceful shutdown handlers
   const shutdown = async (signal: string) => {
     console.log(`\n${signal} received, shutting down gracefully...`)
+
+    handler.broadcastReconnectNotification()
 
     // Close WebSocket server
     wss.close(() => {

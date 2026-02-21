@@ -14,7 +14,7 @@ import { State } from '../types/store/State'
 import { Action } from '../types/store/Action'
 import initial from './initial'
 import { combinedReducer } from './combinedReducer'
-import WebSocketManager from '../lib/WebSocketManager'
+import TrpcManager from '../lib/TrpcManager'
 import IndexedDbManager from '../lib/IndexedDbManager'
 import PushNotificationManager from '../lib/PushNotificationManager'
 import actions, { types } from './actions'
@@ -25,14 +25,14 @@ const IS_LOCAL = process.env.NEXT_PUBLIC_LOCAL === '1'
 interface StoreContextValue {
   state: State
   dispatch: (action: Action) => void
-  wsm: WebSocketManager
+  trpcm: TrpcManager
   idbm: IndexedDbManager
   pushSub: PushNotificationManager
 }
 
 const StoreContext = createContext<StoreContextValue | undefined>(undefined)
 
-const wsm = new WebSocketManager()
+const trpcm = new TrpcManager()
 const idbm = new IndexedDbManager()
 const pushSub = new PushNotificationManager()
 
@@ -47,7 +47,10 @@ export const useStore = () => {
 export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [syncWithServerRequestHandled, setSyncWithServerRequestHandled] =
     useState(true)
-  const [state, dispatch] = useImmerReducer(combinedReducer(wsm, idbm), initial)
+  const [state, dispatch] = useImmerReducer(
+    combinedReducer(trpcm, idbm),
+    initial,
+  )
 
   useEffect(() => {
     const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws'
@@ -56,19 +59,24 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
       ? 'ws://127.0.0.1:1222'
       : `${wsScheme}://${window.location.host}/${basePath ? basePath + '/' : ''}ws/`
 
-    // Connect to WebSocket and pass the dispatch function
-    wsm.connect(wsUrl, dispatch)
+    // Connect to tRPC WebSocket and pass the dispatch function
+    trpcm.connect(wsUrl, dispatch)
 
     // Set timeout for websocket to connect (this is the time the loading animtation plays before we give up)
     // Only set timeout if user is online
+    let tId: ReturnType<typeof setTimeout> | undefined
     if (navigator.onLine) {
-      const tId = setTimeout(() => {
+      tId = setTimeout(() => {
         dispatch(actions.websocketConnectionTimeoutExceeded())
       }, 2000)
-      return () => clearTimeout(tId)
     } else {
       // if the user is offline, assume the timeout will be exceeded and stop loading immediately (the websocket will keep trying to connect in the background)
       dispatch(actions.websocketConnectionTimeoutExceeded())
+    }
+
+    return () => {
+      if (tId) clearTimeout(tId)
+      trpcm.disconnect()
     }
   }, [dispatch])
 
@@ -134,7 +142,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     // no risk for cascading re-renders, this effect is stable
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSyncWithServerRequestHandled(true)
-    wsm.syncWithServer()
+    trpcm.syncWithServer()
   }, [state.webSocketState, state.idbmLoaded, syncWithServerRequestHandled])
 
   return (
@@ -142,7 +150,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
       value={{
         state,
         dispatch,
-        wsm,
+        trpcm,
         idbm,
         pushSub,
       }}

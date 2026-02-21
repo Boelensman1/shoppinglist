@@ -1,26 +1,26 @@
-import type WebSocketManager from '@/lib/WebSocketManager'
+import type TrpcManager from '@/lib/TrpcManager'
 import type IndexedDbManager from '@/lib/IndexedDbManager'
 import type { Action } from '../types/store/Action'
 import reducer from './reducer'
 import { State } from '@/types/store/State'
 
 export const combinedReducer =
-  (wsm: WebSocketManager, idbm: IndexedDbManager) =>
+  (trpcm: TrpcManager, idbm: IndexedDbManager) =>
   (draft: State, action: Action) => {
     reducer(draft, action)
 
-    webSocketSend(wsm, action)
+    trpcSend(trpcm, action)
     if (draft.idbmLoaded) {
       idbm.updateItems(draft.items)
     }
   }
 
-const webSocketSend = (wsm: WebSocketManager, action: Action) => {
+const trpcSend = (trpcm: TrpcManager, action: Action) => {
   if (action.from === 'user') {
     if (action.type === 'UNDO' || action.type === 'REDO') {
-      wsm.sendMessage(action.payload)
+      trpcm.sendAction(action.payload)
     } else {
-      wsm.sendMessage(action)
+      trpcm.sendAction(action)
     }
   }
 }

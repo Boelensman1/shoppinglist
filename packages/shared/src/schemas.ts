@@ -132,7 +132,7 @@ const parsedMessageNotUndoableList = [
   ParsedMessage_unSubscribeUserPushNotificationsSchema,
 ] as const
 
-const ParsedMessageUndoableSchema = z.discriminatedUnion('type', [
+export const ParsedMessageUndoableSchema = z.discriminatedUnion('type', [
   ...parsedMessageUndoableList,
 ]) as z.ZodDiscriminatedUnion<typeof parsedMessageUndoableList>
 

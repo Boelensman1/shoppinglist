@@ -12,6 +12,7 @@ export {
   ParsedMessage_signalFinishedShoppingListSchema,
   ParsedMessage_subscribeUserPushNotificationsSchema,
   ParsedMessage_unSubscribeUserPushNotificationsSchema,
+  ParsedMessageUndoableSchema,
   messageTypes,
 } from './schemas.js'
 

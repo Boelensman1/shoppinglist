@@ -4,6 +4,7 @@
   "exclude": ["src/**/__tests__/**"],
   "compilerOptions": {
     "outDir": "./build",
+    "declaration": true,
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noUnusedLocals": true,

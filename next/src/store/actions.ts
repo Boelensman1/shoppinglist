@@ -23,7 +23,7 @@ import type {
   FocusProcessedAction,
 } from '../types/store/Action'
 import { Action } from '../types/store/Action'
-import { ItemId } from '../../../packages/shared/dist/types'
+import { ItemId } from '../../../packages/shared/build/types'
 
 export const types = {
   ...messageTypes,
