@@ -28,6 +28,7 @@ class TrpcManager {
   private subscriptionCleanup: (() => void) | null = null
 
   private offlineMessageQueue: Action[] = []
+  private unconfirmedActions: Action[] = []
 
   get isConnected() {
     return this.connected
@@ -46,6 +47,8 @@ class TrpcManager {
       onClose: () => {
         console.log('WebSocket closed')
         this.connected = false
+        this.offlineMessageQueue.push(...this.unconfirmedActions)
+        this.unconfirmedActions = []
         dispatch(actions.webSocketConnectionStateChanged('disconnected'))
       },
     })
@@ -105,66 +108,74 @@ class TrpcManager {
       action as unknown as Record<string, unknown>,
     )
 
+    const trackMutation = (promise: Promise<unknown>) => {
+      this.unconfirmedActions.push(action)
+      promise
+        .then(() => {
+          const idx = this.unconfirmedActions.indexOf(action)
+          if (idx !== -1) this.unconfirmedActions.splice(idx, 1)
+        })
+        .catch((err) => {
+          console.error(err)
+        })
+    }
+
     // Fire-and-forget: call the appropriate tRPC mutation
     switch (action.type) {
       case 'ADD_LIST_ITEM':
-        client.addListItem
-          .mutate(stripped.payload as never)
-          .catch(console.error)
+        trackMutation(client.addListItem.mutate(stripped.payload as never))
         break
       case 'REMOVE_LIST_ITEM':
-        client.removeListItem
-          .mutate(stripped.payload as never)
-          .catch(console.error)
+        trackMutation(client.removeListItem.mutate(stripped.payload as never))
         break
       case 'UPDATE_LIST_ITEM_VALUE':
-        client.updateListItemValue
-          .mutate(stripped.payload as never)
-          .catch(console.error)
+        trackMutation(
+          client.updateListItemValue.mutate(stripped.payload as never),
+        )
         break
       case 'UPDATE_LIST_ITEM_CHECKED':
-        client.updateListItemChecked
-          .mutate(stripped.payload as never)
-          .catch(console.error)
+        trackMutation(
+          client.updateListItemChecked.mutate(stripped.payload as never),
+        )
         break
       case 'CLEAR_LIST':
-        client.clearList.mutate(stripped.payload as never).catch(console.error)
+        trackMutation(client.clearList.mutate(stripped.payload as never))
         break
       case 'ADD_LIST':
-        client.addList.mutate(stripped.payload as never).catch(console.error)
+        trackMutation(client.addList.mutate(stripped.payload as never))
         break
       case 'REMOVE_LIST':
-        client.removeList.mutate(stripped.payload as never).catch(console.error)
+        trackMutation(client.removeList.mutate(stripped.payload as never))
         break
       case 'SET_LIST':
-        client.setList.mutate(stripped.payload as never).catch(console.error)
+        trackMutation(client.setList.mutate(stripped.payload as never))
         break
       case 'BATCH':
-        client.batch
-          .mutate(
+        trackMutation(
+          client.batch.mutate(
             (stripped.payload as UndoableAction[]).map(
               (a) =>
                 stripClientFields(
                   a as unknown as Record<string, unknown>,
                 ) as never,
             ),
-          )
-          .catch(console.error)
+          ),
+        )
         break
       case 'SIGNAL_FINISHED_SHOPPINGLIST':
-        client.signalFinishedShoppingList
-          .mutate(stripped.payload as never)
-          .catch(console.error)
+        trackMutation(
+          client.signalFinishedShoppingList.mutate(stripped.payload as never),
+        )
         break
       case 'SUBSCRIBE_USER_PUSH_NOTIFICATIONS':
-        client.subscribePushNotifications
-          .mutate(stripped.payload as never)
-          .catch(console.error)
+        trackMutation(
+          client.subscribePushNotifications.mutate(stripped.payload as never),
+        )
         break
       case 'UNSUBSCRIBE_USER_PUSH_NOTIFICATIONS':
-        client.unsubscribePushNotifications
-          .mutate(stripped.payload as never)
-          .catch(console.error)
+        trackMutation(
+          client.unsubscribePushNotifications.mutate(stripped.payload as never),
+        )
         break
       default:
         // SYNC_WITH_SERVER, INITIAL_FULL_DATA, and client-only actions are not sent as individual mutations
@@ -177,6 +188,10 @@ class TrpcManager {
 
   syncWithServer() {
     if (!this.trpc || !this.dispatch) return
+
+    // Include any still-unconfirmed actions (in-flight mutations that haven't resolved)
+    this.offlineMessageQueue.push(...this.unconfirmedActions)
+    this.unconfirmedActions = []
 
     const offlineActions = this.offlineMessageQueue.filter((action) =>
       isUndoableAction(action),
