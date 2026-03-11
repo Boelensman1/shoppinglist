@@ -20,6 +20,6 @@ test: $(INSTALL_DEPS)
 	npm test
 
 dev: $(INSTALL_DEPS)
-	pnpm tsx watch ./src/index.mts
+	NODE_ENV=development pnpm tsx watch ./src/index.mts
 
 .PHONY: dev lint test clean FORCE

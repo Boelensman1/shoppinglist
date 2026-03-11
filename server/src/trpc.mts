@@ -11,4 +11,12 @@ export const createContext = (opts: CreateWSSContextFnOptions): Context => ({
 
 const t = initTRPC.context<Context>().create()
 export const router = t.router
-export const publicProcedure = t.procedure
+const loggerMiddleware = t.middleware(async ({ path, type, next }) => {
+  console.log(`[${type}] ${path}`)
+  return next()
+})
+
+export const publicProcedure =
+  process.env.NODE_ENV === 'development'
+    ? t.procedure.use(loggerMiddleware)
+    : t.procedure
