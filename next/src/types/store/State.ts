@@ -1,4 +1,4 @@
-import type { ItemRecords, ListId, ListRecords } from '@shoppinglist/shared'
+import type { ItemRecords, ListId, ListRecords } from 'server/shared'
 import type { UndoableAction } from './Action'
 
 export interface State {

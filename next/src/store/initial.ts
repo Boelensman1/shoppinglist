@@ -1,4 +1,4 @@
-import type { ListId } from '@shoppinglist/shared'
+import type { ListId } from 'server/shared'
 import { State } from '../types/store/State'
 
 const initial: State = {

@@ -2,7 +2,7 @@
 
 import clsx from 'clsx'
 import { useState } from 'react'
-import type { ListId } from '@shoppinglist/shared'
+import type { ListId } from 'server/shared'
 import actions from '../store/actions'
 import { useStore } from '../store/useStore'
 import genItemId from '@/utils/genItemId'

@@ -1,5 +1,5 @@
 SRC_FILES=$(shell find src/)
-INSTALL_DEPS=node_modules ../packages/shared/build
+INSTALL_DEPS=node_modules
 
 clean:
 	rm -rf ./node_modules build
@@ -21,8 +21,5 @@ test: $(INSTALL_DEPS)
 
 dev: $(INSTALL_DEPS)
 	pnpm tsx watch ./src/index.mts
-
-../packages/shared/build: FORCE
-	$(MAKE) -C ../packages/shared build
 
 .PHONY: dev lint test clean FORCE

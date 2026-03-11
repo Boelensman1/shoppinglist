@@ -1,4 +1,4 @@
-import type { ItemId, ListId } from '@shoppinglist/shared'
+import type { ItemId, ListId } from 'server/shared'
 import type { State } from '../types/store/State'
 import type { Action } from '../types/store/Action'
 

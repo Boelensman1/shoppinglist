@@ -9,7 +9,7 @@ import {
 } from 'vitest'
 import Knex from 'knex'
 import { Model } from 'objection'
-import type { ItemId, ListId } from '@shoppinglist/shared'
+import type { ItemId, ListId } from '../shared/index.mjs'
 
 // Mock index.mts to prevent server startup side effects
 vi.mock('../index.mjs', async () => {

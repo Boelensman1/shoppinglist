@@ -1,4 +1,4 @@
-import type { Item, ListRecords } from '@shoppinglist/shared'
+import type { Item, ListRecords } from 'server/shared'
 import type { State } from '@/types/store/State'
 
 class IndexedDbManager {

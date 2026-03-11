@@ -1,4 +1,4 @@
-import type { Item, ItemRecords } from './types.js'
+import type { Item, ItemRecords } from './types.mjs'
 
 export const itemsListToRecords = (itemsList: Item[]) =>
   itemsList.reduce<ItemRecords>((acc, item) => {

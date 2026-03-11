@@ -1,6 +1,6 @@
 import type { Action, UndoableAction } from '../types/store/Action'
 import type { Dispatch } from '../types/store/Dispatch'
-import type { ItemRecords, ListRecords } from '@shoppinglist/shared'
+import type { ItemRecords, ListRecords } from 'server/shared'
 import actions, { isUndoableAction } from '../store/actions'
 import { createTrpcClient, type TrpcClient } from './trpc'
 

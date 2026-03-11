@@ -1,6 +1,6 @@
 import { JSONSchema, Model, Pojo } from 'objection'
 import z from 'zod'
-import { ItemId, ItemSchema, ListId } from '@shoppinglist/shared'
+import { ItemSchema, type ItemId, type ListId } from './shared/index.mjs'
 
 class ShoppingListEntry extends Model {
   id!: ItemId

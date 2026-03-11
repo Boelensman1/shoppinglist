@@ -3,7 +3,7 @@ import {
   ParsedMessageSchema,
   ItemSchema,
   ListSchema,
-} from '@shoppinglist/shared'
+} from '../shared/index.mjs'
 
 describe('ItemSchema', () => {
   it('should validate a valid item', () => {

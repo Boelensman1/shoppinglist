@@ -2,7 +2,7 @@
 
 import clsx from 'clsx'
 import { useState } from 'react'
-import type { ListId } from '@shoppinglist/shared'
+import type { ListId } from 'server/shared'
 import { getUndoRedoStore } from './UndoRedoHandler'
 import actions from '../store/actions'
 import { useStore } from '../store/useStore'

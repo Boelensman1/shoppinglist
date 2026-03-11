@@ -5,7 +5,7 @@ import { applyWSSHandler } from '@trpc/server/adapters/ws'
 
 import ShoppingListEntry from './ShoppingListEntry.mjs'
 import List from './List.mjs'
-import { ItemId, ListId } from '@shoppinglist/shared'
+import type { ItemId, ListId } from './shared/index.mjs'
 import { env } from './env.mjs'
 import { appRouter } from './router.mjs'
 import { createContext } from './trpc.mjs'

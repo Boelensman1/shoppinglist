@@ -18,7 +18,7 @@ import TrpcManager from '../lib/TrpcManager'
 import IndexedDbManager from '../lib/IndexedDbManager'
 import PushNotificationManager from '../lib/PushNotificationManager'
 import actions, { types } from './actions'
-import { itemsListToRecords, type ListId } from '@shoppinglist/shared'
+import { itemsListToRecords, type ListId } from 'server/shared'
 
 const IS_LOCAL = process.env.NEXT_PUBLIC_LOCAL === '1'
 

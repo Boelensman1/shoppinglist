@@ -19,7 +19,7 @@ const withSerwist = withSerwistInit({
 const nextConfig: NextConfig = {
   distDir: 'build',
   allowedDevOrigins: ['localhost', '127.0.0.1'],
-  transpilePackages: ['@shoppinglist/shared', 'server'],
+  transpilePackages: ['server'],
 }
 
 export default withSerwist(nextConfig)

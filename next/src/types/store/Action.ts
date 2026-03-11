@@ -14,7 +14,7 @@ import type {
   ParsedMessage_updateChecked,
   ParsedMessage_updateValue,
   ListId,
-} from '@shoppinglist/shared'
+} from 'server/shared'
 import type { types } from '../../store/actions'
 import type { State } from './State'
 

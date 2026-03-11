@@ -1,9 +1,10 @@
 import {
   type Item,
+  type ItemId,
   type List,
   type ListId,
   messageTypes,
-} from '@shoppinglist/shared'
+} from 'server/shared'
 import type { PushSubscription } from 'web-push'
 import genItemId from '../utils/genItemId'
 import type {
@@ -31,7 +32,6 @@ import type {
   FocusProcessedAction,
 } from '../types/store/Action'
 import { Action } from '../types/store/Action'
-import { ItemId } from '../../../packages/shared/build/types'
 
 export const types = {
   ...messageTypes,

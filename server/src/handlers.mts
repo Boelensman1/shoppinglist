@@ -11,7 +11,7 @@ import {
   type ListId,
   type ListRecords,
   type ParsedMessageUndoable,
-} from '@shoppinglist/shared'
+} from './shared/index.mjs'
 import { insertInitial } from './index.mjs'
 import PushSubscription from './PushSubscription.mjs'
 import { env } from './env.mjs'

@@ -21,7 +21,7 @@ import type {
   ParsedMessage_updateValueSchema,
   ParsedMessageFromSchema,
   ParsedMessageUndoableFromSchema,
-} from './schemas.js'
+} from './schemas.mjs'
 
 export type ItemId = z.infer<typeof ItemIdSchema>
 export type ListId = z.infer<typeof ListIdSchema>

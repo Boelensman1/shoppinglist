@@ -18,9 +18,9 @@ export {
   ParsedMessage_removeListSchema,
   ParsedMessageUndoableSchema,
   messageTypes,
-} from './schemas.js'
+} from './schemas.mjs'
 
-export { itemsListToRecords } from './utils.js'
+export { itemsListToRecords } from './utils.mjs'
 
 export type {
   Item,
@@ -45,4 +45,4 @@ export type {
   ParsedMessage_updateChecked,
   ParsedMessage_updateValue,
   ParsedMessage_initialFullData,
-} from './types.js'
+} from './types.mjs'

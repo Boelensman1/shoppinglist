@@ -11,6 +11,10 @@
     },
     "./router": {
       "types": "./build/router.d.mts"
+    },
+    "./shared": {
+      "types": "./build/shared/index.d.mts",
+      "import": "./build/shared/index.mjs"
     }
   },
   "scripts": {
@@ -34,7 +38,6 @@
     "vitest": "^4.0.17"
   },
   "dependencies": {
-    "@shoppinglist/shared": "workspace:*",
     "@trpc/server": "^11.10.0",
     "better-sqlite3": "^12.6.2",
     "dotenv": "^17.2.3",

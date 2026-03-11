@@ -17,7 +17,7 @@ import {
   ParsedMessage_unSubscribeUserPushNotificationsSchema,
   ParsedMessage_signalFinishedShoppingListSchema,
   ParsedMessageUndoableSchema,
-} from '@shoppinglist/shared'
+} from './shared/index.mjs'
 
 export const appRouter = router({
   addListItem: publicProcedure

@@ -10,7 +10,7 @@ import {
 } from 'react'
 import clsx from 'clsx'
 import { motion } from 'framer-motion'
-import type { Item } from '@shoppinglist/shared'
+import type { Item } from 'server/shared'
 import { useStore } from '@/store/useStore'
 import actions from '@/store/actions'
 import genItemId from '@/utils/genItemId'

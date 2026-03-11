@@ -1,6 +1,6 @@
 import { JSONSchema, Model } from 'objection'
 import z from 'zod'
-import { ListSchema } from '@shoppinglist/shared'
+import { ListSchema } from './shared/index.mjs'
 
 class List extends Model {
   id!: string
