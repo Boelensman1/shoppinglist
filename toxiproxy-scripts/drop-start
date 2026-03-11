@@ -1,0 +1,2 @@
+toxiproxy-cli toxic add --type timeout -a timeout=0 -n drop-downstream --downstream shoppinglist
+toxiproxy-cli toxic add --type timeout -a timeout=0 -n drop-upstream --upstream shoppinglist

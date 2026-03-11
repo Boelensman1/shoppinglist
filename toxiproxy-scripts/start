@@ -1,0 +1,2 @@
+toxiproxy-server > /dev/null &
+toxiproxy-cli create --listen 127.0.0.1:4200 --upstream 127.0.0.1:1222 shoppinglist

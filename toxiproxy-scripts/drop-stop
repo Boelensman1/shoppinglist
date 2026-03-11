@@ -1,0 +1,4 @@
+toxiproxy-cli toxic remove -n drop-downstream shoppinglist
+toxiproxy-cli toxic remove -n drop-upstream shoppinglist
+toxiproxy-cli toggle shoppinglist
+toxiproxy-cli toggle shoppinglist
