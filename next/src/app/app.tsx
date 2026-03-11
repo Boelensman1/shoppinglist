@@ -70,12 +70,7 @@ export default function App() {
               listColour={activeList?.colour ?? '#3b82f6'}
             />
           </div>
-          <ActionButtons
-            items={displayItems}
-            undoListLength={state.undoList.length}
-            redoListLength={state.redoList.length}
-            useMobileLayout={useMobileLayout}
-          />
+          <ActionButtons useMobileLayout={useMobileLayout} />
           <UndoRedoHandler />
         </>
       ) : (
