@@ -37,9 +37,10 @@ const parsePasteLineChecked = (line: string) => {
 interface ShoppingListItemProps extends ItemWithDisplayedInfo {
   isLast: boolean
   isOnly: boolean
+  listColour: string
 }
 
-type Line = Omit<Item, 'prevItemId'>
+type Line = Omit<Item, 'prevItemId' | 'listId'>
 
 const ShoppingListItem: React.FC<ShoppingListItemProps> = (props) => {
   const { state, dispatch } = useStore()
@@ -63,12 +64,12 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = (props) => {
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
-      dispatch(actions.addListItem(props.id))
+      dispatch(actions.addListItem(props.id, state.activeListId))
     }
     if (event.key === 'Tab') {
       if (props.isLast) {
         event.preventDefault()
-        dispatch(actions.addListItem(props.id))
+        dispatch(actions.addListItem(props.id, state.activeListId))
       }
     }
 
@@ -130,7 +131,7 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = (props) => {
 
     let lastId = props.id
     lines.forEach((line) => {
-      batch.push(actions.addListItem(lastId, line))
+      batch.push(actions.addListItem(lastId, state.activeListId, line))
       lastId = line.id
     })
 
@@ -166,7 +167,7 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = (props) => {
         checked={props.checked}
         onMouseDown={(e) => e.preventDefault()}
         onClick={handleChecked}
-        style={{ transform: 'scale(1.6)' }}
+        style={{ transform: 'scale(1.6)', accentColor: props.listColour }}
         readOnly
       />
       <div className="relative w-full">
@@ -178,10 +179,19 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = (props) => {
           onChange={handleInput}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
-          className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
+          className="w-full p-2 border rounded focus:outline-none focus:ring-2"
+          style={
+            {
+              borderColor: props.listColour,
+              '--tw-ring-color': props.listColour,
+            } as React.CSSProperties
+          }
         />
         {props.checked && (
-          <div className="absolute top-1/2 left-2 right-2 h-px bg-blue-500 transform -translate-y-1/2 pointer-events-none" />
+          <div
+            className="absolute top-1/2 left-2 right-2 h-px transform -translate-y-1/2 pointer-events-none"
+            style={{ backgroundColor: props.listColour }}
+          />
         )}
       </div>
     </motion.div>

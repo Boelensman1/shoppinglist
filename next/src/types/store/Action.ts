@@ -1,9 +1,11 @@
 import type {
   ParsedMessage_addItem,
+  ParsedMessage_addList,
   ParsedMessage_batch,
   ParsedMessage_clearList,
   ParsedMessage_initialFullData,
   ParsedMessage_removeItem,
+  ParsedMessage_removeList,
   ParsedMessage_setList,
   ParsedMessage_signalFinishedShoppingList,
   ParsedMessage_subscribeUserPushNotifications,
@@ -11,6 +13,7 @@ import type {
   ParsedMessage_unSubscribeUserPushNotifications,
   ParsedMessage_updateChecked,
   ParsedMessage_updateValue,
+  ListId,
 } from '@shoppinglist/shared'
 import type { types } from '../../store/actions'
 import type { State } from './State'
@@ -81,6 +84,15 @@ export type SubscribeUserPushNotifications = BaseAction &
 export type UnSubscribeUserPushNotifications = BaseAction &
   ParsedMessage_unSubscribeUserPushNotifications
 
+export type AddListAction = BaseAction & ParsedMessage_addList
+
+export type RemoveListAction = BaseAction & ParsedMessage_removeList
+
+export interface SwitchActiveListAction extends BaseAction {
+  type: typeof types.SWITCH_ACTIVE_LIST
+  payload: { id: ListId }
+}
+
 export interface UpdateUserIdAction extends BaseAction {
   type: typeof types.UPDATE_USER_ID
   payload: { userId: string }
@@ -121,6 +133,9 @@ export type Action =
   | SignalFinishedShoppingList
   | SubscribeUserPushNotifications
   | UnSubscribeUserPushNotifications
+  | AddListAction
+  | RemoveListAction
+  | SwitchActiveListAction
   | UpdateUserIdAction
   | UpdateHasPushSubscriptionAction
   | UpdateCanSubscribeAction

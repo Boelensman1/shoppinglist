@@ -18,7 +18,7 @@ import TrpcManager from '../lib/TrpcManager'
 import IndexedDbManager from '../lib/IndexedDbManager'
 import PushNotificationManager from '../lib/PushNotificationManager'
 import actions, { types } from './actions'
-import { itemsListToRecords } from '@shoppinglist/shared'
+import { itemsListToRecords, type ListId } from '@shoppinglist/shared'
 
 const IS_LOCAL = process.env.NEXT_PUBLIC_LOCAL === '1'
 
@@ -92,6 +92,18 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
 
       await pushSub.initialize(dispatch, userId)
 
+      const lists = await idbm.getLists()
+      const defaultLists =
+        Object.keys(lists).length > 0
+          ? lists
+          : {
+              ['default' as ListId]: {
+                id: 'default' as ListId,
+                name: 'Boodschappen',
+                colour: '#3b82f6',
+              },
+            }
+
       // Check for pending notification data first
       const pendingItems = await idbm.getPendingNotification()
       if (pendingItems) {
@@ -99,7 +111,10 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         await idbm.clearPendingNotification()
         dispatch({
           type: types.INITIAL_FULL_DATA,
-          payload: itemsListToRecords(pendingItems),
+          payload: {
+            items: itemsListToRecords(pendingItems),
+            lists: defaultLists,
+          },
           from: 'idbm',
         })
       } else {
@@ -107,7 +122,10 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         const items = await idbm.getItems()
         dispatch({
           type: types.INITIAL_FULL_DATA,
-          payload: items,
+          payload: {
+            items,
+            lists: defaultLists,
+          },
           from: 'idbm',
         })
       }

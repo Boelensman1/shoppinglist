@@ -16,9 +16,19 @@ export const messageTypes = {
   UNSUBSCRIBE_USER_PUSH_NOTIFICATIONS:
     'UNSUBSCRIBE_USER_PUSH_NOTIFICATIONS' as const,
   INITIAL_FULL_DATA: 'INITIAL_FULL_DATA' as const,
+  ADD_LIST: 'ADD_LIST' as const,
+  REMOVE_LIST: 'REMOVE_LIST' as const,
 }
 
 export const ItemIdSchema = z.string().brand('ItemId')
+export const ListIdSchema = z.string().brand('ListId')
+
+// List schema
+export const ListSchema = z.object({
+  id: ListIdSchema,
+  name: z.string(),
+  colour: z.string(),
+})
 
 // Item schema
 export const ItemSchema = z.object({
@@ -27,6 +37,7 @@ export const ItemSchema = z.object({
   checked: z.boolean(),
   deleted: z.boolean(),
   prevItemId: ItemIdSchema.or(z.literal('HEAD')),
+  listId: ListIdSchema,
 })
 
 // PushSubscription schema (from web-push)
@@ -72,6 +83,9 @@ export const ParsedMessage_updateCheckedSchema = z.object({
 
 export const ParsedMessage_clearListSchema = z.object({
   type: z.literal(messageTypes.CLEAR_LIST),
+  payload: z.object({
+    listId: ListIdSchema,
+  }),
 })
 
 export const ParsedMessage_setListSchema = z.object({
@@ -125,11 +139,25 @@ const parsedMessageUndoableList = [
   ParsedMessage_batchSchema,
 ] as const
 
+export const ParsedMessage_addListSchema = z.object({
+  type: z.literal(messageTypes.ADD_LIST),
+  payload: ListSchema,
+})
+
+export const ParsedMessage_removeListSchema = z.object({
+  type: z.literal(messageTypes.REMOVE_LIST),
+  payload: z.object({
+    id: ListIdSchema,
+  }),
+})
+
 const parsedMessageNotUndoableList = [
   ParsedMessage_syncWithServerSchema,
   ParsedMessage_signalFinishedShoppingListSchema,
   ParsedMessage_subscribeUserPushNotificationsSchema,
   ParsedMessage_unSubscribeUserPushNotificationsSchema,
+  ParsedMessage_addListSchema,
+  ParsedMessage_removeListSchema,
 ] as const
 
 export const ParsedMessageUndoableSchema = z.discriminatedUnion('type', [
@@ -144,7 +172,10 @@ export const ParsedMessageSchema = z.discriminatedUnion('type', [
 // client->server only messages
 export const ParsedMessage_initialFullDataSchema = z.object({
   type: z.literal(messageTypes.INITIAL_FULL_DATA),
-  payload: z.record(ItemIdSchema, ItemSchema),
+  payload: z.object({
+    items: z.record(ItemIdSchema, ItemSchema),
+    lists: z.record(ListIdSchema, ListSchema),
+  }),
 })
 
 export type ParsedMessageUndoableFromSchema = z.infer<

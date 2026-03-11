@@ -4,7 +4,8 @@ import { WebSocketServer } from 'ws'
 import { applyWSSHandler } from '@trpc/server/adapters/ws'
 
 import ShoppingListEntry from './ShoppingListEntry.mjs'
-import { ItemId } from '@shoppinglist/shared'
+import List from './List.mjs'
+import { ItemId, ListId } from '@shoppinglist/shared'
 import { env } from './env.mjs'
 import { appRouter } from './router.mjs'
 import { createContext } from './trpc.mjs'
@@ -21,19 +22,48 @@ const knex = Knex({
 
 Model.knex(knex)
 
-export const insertInitial = (trx?: Transaction) =>
-  ShoppingListEntry.query(trx)
+const DEFAULT_LIST_ID = 'default' as ListId
+
+export const insertInitial = (
+  trx?: Transaction,
+  listId: ListId = DEFAULT_LIST_ID,
+) => {
+  const itemId = (
+    listId === DEFAULT_LIST_ID ? 'INITIAL' : `initial-${listId}`
+  ) as ItemId
+  return ShoppingListEntry.query(trx)
     .insert({
-      id: 'INITIAL' as ItemId,
+      id: itemId,
       value: '',
       checked: false,
       deleted: false,
       prevItemId: 'HEAD',
+      listId,
     })
     .onConflict('id')
     .ignore()
+}
 
 const init = async () => {
+  // Create lists table if it doesn't exist
+  if (!(await knex.schema.hasTable('lists'))) {
+    await knex.schema.createTable('lists', (table) => {
+      table.string('id').primary()
+      table.string('name').notNullable()
+      table.string('colour').notNullable()
+      table.timestamps(true, true, true)
+    })
+
+    await List.query()
+      .insert({
+        id: DEFAULT_LIST_ID,
+        name: 'Boodschappen',
+        colour: '#3b82f6',
+      })
+      .onConflict('id')
+      .ignore()
+  }
+
   if (!(await knex.schema.hasTable('shoppingListEntries'))) {
     await knex.schema.createTable('shoppingListEntries', (table) => {
       table.string('id').primary()
@@ -41,11 +71,27 @@ const init = async () => {
       table.string('value').notNullable()
       table.boolean('checked').notNullable()
       table.boolean('deleted').notNullable()
+      table.string('listId').notNullable().defaultTo('default')
       table.timestamps(true, true, true)
     })
 
     await insertInitial()
+  } else if (!(await knex.schema.hasColumn('shoppingListEntries', 'listId'))) {
+    // Migration: add listId column to existing table
+    await knex.schema.alterTable('shoppingListEntries', (table) => {
+      table.string('listId').notNullable().defaultTo('default')
+    })
   }
+
+  // Ensure default list exists (for existing databases)
+  await List.query()
+    .insert({
+      id: DEFAULT_LIST_ID,
+      name: 'Boodschappen',
+      colour: '#3b82f6',
+    })
+    .onConflict('id')
+    .ignore()
 
   if (!(await knex.schema.hasTable('pushSubscriptions'))) {
     await knex.schema.createTable('pushSubscriptions', (table) => {
@@ -56,8 +102,6 @@ const init = async () => {
       table.integer('expirationTime').unsigned()
       table.timestamps(true, true, true)
     })
-
-    await insertInitial()
   }
 }
 

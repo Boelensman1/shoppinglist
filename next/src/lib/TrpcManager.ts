@@ -1,6 +1,6 @@
 import type { Action, UndoableAction } from '../types/store/Action'
 import type { Dispatch } from '../types/store/Dispatch'
-import type { ItemRecords } from '@shoppinglist/shared'
+import type { ItemRecords, ListRecords } from '@shoppinglist/shared'
 import actions, { isUndoableAction } from '../store/actions'
 import { createTrpcClient, type TrpcClient } from './trpc'
 
@@ -128,7 +128,13 @@ class TrpcManager {
           .catch(console.error)
         break
       case 'CLEAR_LIST':
-        client.clearList.mutate().catch(console.error)
+        client.clearList.mutate(stripped.payload as never).catch(console.error)
+        break
+      case 'ADD_LIST':
+        client.addList.mutate(stripped.payload as never).catch(console.error)
+        break
+      case 'REMOVE_LIST':
+        client.removeList.mutate(stripped.payload as never).catch(console.error)
         break
       case 'SET_LIST':
         client.setList.mutate(stripped.payload as never).catch(console.error)
@@ -185,7 +191,7 @@ class TrpcManager {
     const dispatch = this.dispatch
     this.trpc.client.syncWithServer
       .mutate(strippedActions)
-      .then((fullData: ItemRecords) => {
+      .then((fullData: { items: ItemRecords; lists: ListRecords }) => {
         dispatch({
           type: 'INITIAL_FULL_DATA' as const,
           payload: fullData,

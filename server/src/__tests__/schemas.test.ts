@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { ParsedMessageSchema, ItemSchema } from '@shoppinglist/shared'
+import {
+  ParsedMessageSchema,
+  ItemSchema,
+  ListSchema,
+} from '@shoppinglist/shared'
 
 describe('ItemSchema', () => {
   it('should validate a valid item', () => {
@@ -9,6 +13,7 @@ describe('ItemSchema', () => {
       checked: false,
       deleted: false,
       prevItemId: 'INITIAL',
+      listId: 'default',
     }
 
     const result = ItemSchema.safeParse(validItem)
@@ -32,9 +37,43 @@ describe('ItemSchema', () => {
       checked: 'false', // should be boolean
       deleted: false,
       prevItemId: 'INITIAL',
+      listId: 'default',
     }
 
     const result = ItemSchema.safeParse(invalidItem)
+    expect(result.success).toBe(false)
+  })
+})
+
+describe('ListSchema', () => {
+  it('should validate a valid list', () => {
+    const validList = {
+      id: 'list-1',
+      name: 'Groceries',
+      colour: '#3b82f6',
+    }
+
+    const result = ListSchema.safeParse(validList)
+    expect(result.success).toBe(true)
+  })
+
+  it('should reject a list with missing fields', () => {
+    const invalidList = {
+      id: 'list-1',
+    }
+
+    const result = ListSchema.safeParse(invalidList)
+    expect(result.success).toBe(false)
+  })
+
+  it('should reject a list with wrong types', () => {
+    const invalidList = {
+      id: 'list-1',
+      name: 123,
+      colour: '#3b82f6',
+    }
+
+    const result = ListSchema.safeParse(invalidList)
     expect(result.success).toBe(false)
   })
 })
@@ -50,6 +89,7 @@ describe('ParsedMessageSchema', () => {
           checked: false,
           deleted: false,
           prevItemId: 'INITIAL',
+          listId: 'default',
         },
       }
 
@@ -65,6 +105,7 @@ describe('ParsedMessageSchema', () => {
           value: 'Milk',
           checked: false,
           deleted: false,
+          listId: 'default',
         },
       }
 
@@ -134,6 +175,9 @@ describe('ParsedMessageSchema', () => {
     it('should validate a valid CLEAR_LIST message', () => {
       const validMessage = {
         type: 'CLEAR_LIST',
+        payload: {
+          listId: 'default',
+        },
       }
 
       const result = ParsedMessageSchema.safeParse(validMessage)
@@ -154,6 +198,7 @@ describe('ParsedMessageSchema', () => {
               checked: false,
               deleted: false,
               prevItemId: 'INITIAL',
+              listId: 'default',
             },
           },
           {
@@ -164,6 +209,36 @@ describe('ParsedMessageSchema', () => {
             },
           },
         ],
+      }
+
+      const result = ParsedMessageSchema.safeParse(validMessage)
+      expect(result.success).toBe(true)
+    })
+  })
+
+  describe('ADD_LIST', () => {
+    it('should validate a valid ADD_LIST message', () => {
+      const validMessage = {
+        type: 'ADD_LIST',
+        payload: {
+          id: 'list-1',
+          name: 'Groceries',
+          colour: '#3b82f6',
+        },
+      }
+
+      const result = ParsedMessageSchema.safeParse(validMessage)
+      expect(result.success).toBe(true)
+    })
+  })
+
+  describe('REMOVE_LIST', () => {
+    it('should validate a valid REMOVE_LIST message', () => {
+      const validMessage = {
+        type: 'REMOVE_LIST',
+        payload: {
+          id: 'list-1',
+        },
       }
 
       const result = ParsedMessageSchema.safeParse(validMessage)

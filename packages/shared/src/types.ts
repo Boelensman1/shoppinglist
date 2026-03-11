@@ -3,11 +3,15 @@ import z from 'zod'
 import type {
   ItemIdSchema,
   ItemSchema,
+  ListIdSchema,
+  ListSchema,
   ParsedMessage_addItemSchema,
+  ParsedMessage_addListSchema,
   ParsedMessage_batchSchema,
   ParsedMessage_clearListSchema,
   ParsedMessage_initialFullDataSchema,
   ParsedMessage_removeItemSchema,
+  ParsedMessage_removeListSchema,
   ParsedMessage_setListSchema,
   ParsedMessage_signalFinishedShoppingListSchema,
   ParsedMessage_subscribeUserPushNotificationsSchema,
@@ -20,8 +24,10 @@ import type {
 } from './schemas.js'
 
 export type ItemId = z.infer<typeof ItemIdSchema>
+export type ListId = z.infer<typeof ListIdSchema>
 
 export type Item = z.infer<typeof ItemSchema>
+export type List = z.infer<typeof ListSchema>
 
 export type ParsedMessageUndoable = ParsedMessageUndoableFromSchema
 export type ParsedMessage = ParsedMessageFromSchema
@@ -58,4 +64,10 @@ export type ParsedMessage_initialFullData = z.infer<
   typeof ParsedMessage_initialFullDataSchema
 >
 
+export type ParsedMessage_addList = z.infer<typeof ParsedMessage_addListSchema>
+export type ParsedMessage_removeList = z.infer<
+  typeof ParsedMessage_removeListSchema
+>
+
 export type ItemRecords = Record<ItemId, Item>
+export type ListRecords = Record<ListId, List>

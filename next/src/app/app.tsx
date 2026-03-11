@@ -16,10 +16,20 @@ export default function App() {
   const { state } = useStore()
   const useMobileLayout = useMediaQuery('(max-width:750px)')
 
-  const displayItems = useMemo(
-    () => (isLoaded(state) ? itemsToList(state.items) : []),
-    [state],
-  )
+  const activeList = isLoaded(state)
+    ? state.lists[state.activeListId]
+    : undefined
+
+  const displayItems = useMemo(() => {
+    if (!isLoaded(state)) return []
+    // Filter items to only show those belonging to the active list
+    const filteredItems = Object.fromEntries(
+      Object.entries(state.items).filter(
+        ([, item]) => item.listId === state.activeListId,
+      ),
+    ) as typeof state.items
+    return itemsToList(filteredItems)
+  }, [state])
 
   return (
     <div
@@ -55,7 +65,10 @@ export default function App() {
                 : ' max-w-xl mx-auto py-5 pr-6 pl-4 rounded-sm shadow-md border border-gray-200',
             )}
           >
-            <ShoppingList items={displayItems} />
+            <ShoppingList
+              items={displayItems}
+              listColour={activeList?.colour ?? '#3b82f6'}
+            />
           </div>
           <ActionButtons
             items={displayItems}

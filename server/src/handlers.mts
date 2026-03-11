@@ -2,10 +2,14 @@ import webpush from 'web-push'
 import type { Transaction } from 'objection'
 
 import ShoppingListEntry from './ShoppingListEntry.mjs'
+import ListModel from './List.mjs'
 import {
   itemsListToRecords,
   type Item,
   type ItemRecords,
+  type List,
+  type ListId,
+  type ListRecords,
   type ParsedMessageUndoable,
 } from '@shoppinglist/shared'
 import { insertInitial } from './index.mjs'
@@ -54,12 +58,15 @@ export const updateListItemChecked = async (
     .patch({ checked: payload.newChecked })
 }
 
-export const clearList = async (trx?: Transaction) => {
+export const clearList = async (
+  payload: { listId: ListId },
+  trx?: Transaction,
+) => {
   await ShoppingListEntry.transaction(
     trx ?? ShoppingListEntry.knex(),
     async (t) => {
-      await t.table('shoppingListEntries').truncate()
-      await insertInitial(t)
+      await ShoppingListEntry.query(t).where('listId', payload.listId).delete()
+      await insertInitial(t, payload.listId)
     },
   )
 }
@@ -95,7 +102,7 @@ export const executeUndoableAction = async (
     case 'UPDATE_LIST_ITEM_CHECKED':
       return updateListItemChecked(action.payload, trx)
     case 'CLEAR_LIST':
-      return clearList(trx)
+      return clearList(action.payload, trx)
     case 'SET_LIST':
       return setList(action.payload, trx)
     case 'BATCH':
@@ -117,9 +124,41 @@ export const executeBatch = async (
   )
 }
 
-export const getFullData = async (): Promise<ItemRecords> => {
+export const getFullData = async (): Promise<{
+  items: ItemRecords
+  lists: ListRecords
+}> => {
   const results = await ShoppingListEntry.query()
-  return itemsListToRecords(results.map((r) => r.toJSON() as Item))
+  const items = itemsListToRecords(results.map((r) => r.toJSON() as Item))
+
+  const listResults = await ListModel.query()
+  const lists = listResults.reduce<ListRecords>((acc, l) => {
+    const list = l.toJSON() as unknown as List
+    acc[list.id] = list
+    return acc
+  }, {})
+
+  return { items, lists }
+}
+
+export const addList = async (payload: List) => {
+  await ListModel.transaction(async (trx) => {
+    await ListModel.query(trx).insert(payload).onConflict('id').merge()
+    await insertInitial(trx, payload.id)
+  })
+}
+
+export const removeList = async (payload: { id: ListId }) => {
+  // Prevent deleting the last list
+  const count = await ListModel.query().resultSize()
+  if (count <= 1) {
+    throw new Error('Cannot remove the last list')
+  }
+
+  await ListModel.transaction(async (trx) => {
+    await ShoppingListEntry.query(trx).where('listId', payload.id).delete()
+    await ListModel.query(trx).deleteById(payload.id)
+  })
 }
 
 export const subscribePushNotifications = async (payload: {

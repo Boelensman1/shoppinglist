@@ -1,4 +1,4 @@
-import type { ItemId } from '@shoppinglist/shared'
+import type { ItemId, ListId } from '@shoppinglist/shared'
 import type { State } from '../types/store/State'
 import type { Action } from '../types/store/Action'
 
@@ -70,6 +70,8 @@ const applyAction = (
       break
     }
     case types.CLEAR_LIST: {
+      const listId = action.payload.listId
+
       if (canUndo(action)) {
         const oldList = draft.items
         undoList.push({
@@ -80,15 +82,24 @@ const applyAction = (
         })
       }
 
-      const initialItemId = 'INITIAL' as ItemId
-      draft.items = {
-        [initialItemId]: {
-          id: initialItemId,
-          value: '',
-          prevItemId: 'HEAD',
-          checked: false,
-          deleted: false,
-        },
+      // Remove only items belonging to this list
+      for (const id of Object.keys(draft.items)) {
+        if (draft.items[id as ItemId].listId === listId) {
+          delete draft.items[id as ItemId]
+        }
+      }
+
+      // Add initial item for this list
+      const initialItemId = (
+        listId === ('default' as ListId) ? 'INITIAL' : `initial-${listId}`
+      ) as ItemId
+      draft.items[initialItemId] = {
+        id: initialItemId,
+        value: '',
+        prevItemId: 'HEAD',
+        checked: false,
+        deleted: false,
+        listId,
       }
       break
     }
@@ -136,7 +147,15 @@ const applyAction = (
     case types.INITIAL_FULL_DATA: {
       // check that we don't overwrite the server data with idbm data
       if (action.from !== 'idbm' || draft.serverLoaded !== true) {
-        draft.items = action.payload
+        draft.items = action.payload.items
+        draft.lists = action.payload.lists
+        // Set activeListId if not yet set or if current active list doesn't exist
+        if (!draft.activeListId || !action.payload.lists[draft.activeListId]) {
+          const listIds = Object.keys(action.payload.lists) as ListId[]
+          if (listIds.length > 0) {
+            draft.activeListId = listIds[0]
+          }
+        }
       }
 
       if (action.from === 'idbm') {
@@ -145,6 +164,43 @@ const applyAction = (
       if (action.from === 'server') {
         draft.serverLoaded = true
       }
+      break
+    }
+    case types.ADD_LIST: {
+      const list = action.payload
+      draft.lists[list.id] = list
+      // Add initial empty item for the new list
+      const newInitialId = `initial-${list.id}` as ItemId
+      draft.items[newInitialId] = {
+        id: newInitialId,
+        value: '',
+        prevItemId: 'HEAD',
+        checked: false,
+        deleted: false,
+        listId: list.id as unknown as ListId,
+      }
+      break
+    }
+    case types.REMOVE_LIST: {
+      const { id } = action.payload
+      delete draft.lists[id]
+      // Remove items belonging to this list
+      for (const itemId of Object.keys(draft.items)) {
+        if (draft.items[itemId as ItemId].listId === id) {
+          delete draft.items[itemId as ItemId]
+        }
+      }
+      // Switch active list if needed
+      if (draft.activeListId === id) {
+        const remainingIds = Object.keys(draft.lists) as ListId[]
+        if (remainingIds.length > 0) {
+          draft.activeListId = remainingIds[0]
+        }
+      }
+      break
+    }
+    case types.SWITCH_ACTIVE_LIST: {
+      draft.activeListId = action.payload.id
       break
     }
     case types.UNDO: {

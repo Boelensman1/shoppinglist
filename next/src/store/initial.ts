@@ -1,8 +1,11 @@
+import type { ListId } from '@shoppinglist/shared'
 import { State } from '../types/store/State'
 
 const initial: State = {
   userId: '',
   items: {},
+  lists: {},
+  activeListId: 'default' as ListId,
   focusTargetId: null,
   idbmLoaded: false,
   serverLoaded: false,

@@ -7,9 +7,10 @@ import type { ItemWithDisplayedInfo } from '@/utils/itemsToList'
 
 interface ShoppingListProps {
   items: ItemWithDisplayedInfo[]
+  listColour: string
 }
 
-const ShoppingList: React.FC<ShoppingListProps> = ({ items }) => (
+const ShoppingList: React.FC<ShoppingListProps> = ({ items, listColour }) => (
   <div className="relative">
     <AnimatePresence mode="popLayout">
       {items.map((item) => (
@@ -17,6 +18,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ items }) => (
           key={item.id}
           isOnly={items.length === 1}
           isLast={!item.displayedNextItemId}
+          listColour={listColour}
           {...item}
         />
       ))}

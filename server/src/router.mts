@@ -9,7 +9,10 @@ import {
   ParsedMessage_removeItemSchema,
   ParsedMessage_updateValueSchema,
   ParsedMessage_updateCheckedSchema,
+  ParsedMessage_clearListSchema,
   ParsedMessage_setListSchema,
+  ParsedMessage_addListSchema,
+  ParsedMessage_removeListSchema,
   ParsedMessage_subscribeUserPushNotificationsSchema,
   ParsedMessage_unSubscribeUserPushNotificationsSchema,
   ParsedMessage_signalFinishedShoppingListSchema,
@@ -57,13 +60,15 @@ export const appRouter = router({
       })
     }),
 
-  clearList: publicProcedure.mutation(async ({ ctx }) => {
-    await handlers.clearList()
-    ee.emit('broadcast', {
-      sessionId: ctx.sessionId,
-      data: { type: 'CLEAR_LIST' },
-    })
-  }),
+  clearList: publicProcedure
+    .input(ParsedMessage_clearListSchema.shape.payload)
+    .mutation(async ({ input, ctx }) => {
+      await handlers.clearList(input)
+      ee.emit('broadcast', {
+        sessionId: ctx.sessionId,
+        data: { type: 'CLEAR_LIST', payload: input },
+      })
+    }),
 
   setList: publicProcedure
     .input(ParsedMessage_setListSchema.shape.payload)
@@ -85,6 +90,26 @@ export const appRouter = router({
           data: action,
         })
       }
+    }),
+
+  addList: publicProcedure
+    .input(ParsedMessage_addListSchema.shape.payload)
+    .mutation(async ({ input, ctx }) => {
+      await handlers.addList(input)
+      ee.emit('broadcast', {
+        sessionId: ctx.sessionId,
+        data: { type: 'ADD_LIST', payload: input },
+      })
+    }),
+
+  removeList: publicProcedure
+    .input(ParsedMessage_removeListSchema.shape.payload)
+    .mutation(async ({ input, ctx }) => {
+      await handlers.removeList(input)
+      ee.emit('broadcast', {
+        sessionId: ctx.sessionId,
+        data: { type: 'REMOVE_LIST', payload: input },
+      })
     }),
 
   syncWithServer: publicProcedure

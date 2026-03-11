@@ -1,8 +1,9 @@
-import type { Item } from '@shoppinglist/shared'
+import type { Item, ListRecords } from '@shoppinglist/shared'
 import type { State } from '@/types/store/State'
 
 class IndexedDbManager {
   db: IDBDatabase | null = null
+  private initPromise: Promise<unknown> | null = null
 
   private createError(context: string, originalError?: unknown): Error {
     const errorMessage =
@@ -20,11 +21,14 @@ class IndexedDbManager {
   }
 
   async init() {
-    return new Promise((resolve, reject) => {
-      const request = window.indexedDB.open('ShoppinglistDB', 1)
+    if (this.initPromise) return this.initPromise
+
+    this.initPromise = new Promise((resolve, reject) => {
+      const request = window.indexedDB.open('ShoppinglistDB', 2)
       request.onerror = (event) => {
         const target = event.target as IDBOpenDBRequest
         console.error(event)
+        this.initPromise = null
         reject(this.createError('initialization', target.error))
       }
       request.onsuccess = (event) => {
@@ -45,8 +49,13 @@ class IndexedDbManager {
         if (!db.objectStoreNames.contains('pendingNotifications')) {
           db.createObjectStore('pendingNotifications', { keyPath: 'id' })
         }
+        if (!db.objectStoreNames.contains('lists')) {
+          db.createObjectStore('lists', { keyPath: 'id' })
+        }
       }
     })
+
+    return this.initPromise
   }
 
   async updateItems(items: State['items']) {
@@ -179,6 +188,60 @@ class IndexedDbManager {
         }
       } catch (error) {
         reject(this.createError('getPendingNotification', error))
+      }
+    })
+  }
+
+  async updateLists(lists: ListRecords) {
+    return new Promise((resolve, reject) => {
+      try {
+        const db = this.ensureDb('updateLists')
+        const transaction = db.transaction(['lists'], 'readwrite')
+        const objectStore = transaction.objectStore('lists')
+        objectStore.delete('main')
+        const request = objectStore.add({
+          id: 'main',
+          lists: JSON.stringify(lists),
+        })
+        request.onsuccess = () => {
+          resolve(true)
+        }
+        request.onerror = (event) => {
+          console.error(event)
+          const target = event.target as IDBOpenDBRequest
+          reject(this.createError('updateLists', target.error))
+        }
+      } catch (error) {
+        reject(this.createError('updateLists', error))
+      }
+    })
+  }
+
+  async getLists(): Promise<ListRecords> {
+    return new Promise((resolve, reject) => {
+      try {
+        const db = this.ensureDb('getLists')
+        const transaction = db.transaction(['lists'], 'readonly')
+        const objectStore = transaction.objectStore('lists')
+        const request = objectStore.get('main')
+        request.onerror = (event) => {
+          console.error(event)
+          const target = event.target as IDBOpenDBRequest
+          reject(this.createError('getLists', target.error))
+        }
+        request.onsuccess = (event) => {
+          const target = event.target as IDBRequest<{
+            id: string
+            lists: string
+          }>
+          if (target.result) {
+            resolve(JSON.parse(target.result.lists) as ListRecords)
+          } else {
+            resolve({})
+          }
+        }
+      } catch (error) {
+        reject(this.createError('getLists', error))
       }
     })
   }

@@ -11,7 +11,8 @@ export const combinedReducer =
 
     trpcSend(trpcm, action)
     if (draft.idbmLoaded) {
-      idbm.updateItems(draft.items)
+      idbm.updateItems(draft.items).catch(console.error)
+      idbm.updateLists(draft.lists).catch(console.error)
     }
   }
 

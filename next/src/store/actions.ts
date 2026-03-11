@@ -1,8 +1,16 @@
-import { type Item, messageTypes } from '@shoppinglist/shared'
+import {
+  type Item,
+  type List,
+  type ListId,
+  messageTypes,
+} from '@shoppinglist/shared'
 import type { PushSubscription } from 'web-push'
 import genItemId from '../utils/genItemId'
 import type {
   AddListItemAction,
+  AddListAction,
+  RemoveListAction,
+  SwitchActiveListAction,
   WebsocketConnectionStateChangedAction,
   RedoAction,
   RemoveListItemAction,
@@ -39,6 +47,7 @@ export const types = {
   UPDATE_CAN_SUBSCRIBE: 'UPDATE_CAN_SUBSCRIBE' as const,
   FOCUS_PROCESSED: 'FOCUS_PROCESSED' as const,
   UPDATE_USER_ID: 'UPDATE_USER_ID' as const,
+  SWITCH_ACTIVE_LIST: 'SWITCH_ACTIVE_LIST' as const,
 }
 
 const actions = {
@@ -65,8 +74,9 @@ const actions = {
     payload,
     from: 'user',
   }),
-  clear: (): ClearListAction => ({
+  clear: (listId: ListId): ClearListAction => ({
     type: types.CLEAR_LIST,
+    payload: { listId },
     from: 'user',
   }),
   executeBatch: (batchActions: UndoableAction[]): BatchAction => ({
@@ -74,7 +84,10 @@ const actions = {
     payload: batchActions,
     from: 'user',
   }),
-  clearCheckedItems: (items: Item[]): BatchAction | ClearListAction => {
+  clearCheckedItems: (
+    items: Item[],
+    listId: ListId,
+  ): BatchAction | ClearListAction => {
     const nonDeletedItems = items.filter((item: Item) => !item.deleted)
 
     const checkedItemIds = nonDeletedItems
@@ -85,6 +98,7 @@ const actions = {
     if (checkedItemIds.length === nonDeletedItems.length) {
       return {
         type: types.CLEAR_LIST,
+        payload: { listId },
         from: 'user',
       }
     }
@@ -106,7 +120,8 @@ const actions = {
   },
   addListItem: (
     prevItemId: ItemId,
-    item?: Omit<Item, 'prevItemId'>,
+    listId: ListId,
+    item?: Omit<Item, 'prevItemId' | 'listId'>,
   ): AddListItemAction => {
     return {
       type: types.ADD_LIST_ITEM,
@@ -118,6 +133,7 @@ const actions = {
           deleted: false,
         }),
         prevItemId,
+        listId,
       },
       from: 'user',
     }
@@ -195,6 +211,24 @@ const actions = {
   updateCanSubscribe: (canSubscribe: boolean): UpdateCanSubscribeAction => ({
     type: types.UPDATE_CAN_SUBSCRIBE,
     payload: { canSubscribe },
+    from: 'internal',
+  }),
+
+  addList: (list: List): AddListAction => ({
+    type: types.ADD_LIST,
+    payload: list,
+    from: 'user',
+  }),
+
+  removeList: (id: ListId): RemoveListAction => ({
+    type: types.REMOVE_LIST,
+    payload: { id },
+    from: 'user',
+  }),
+
+  switchActiveList: (id: ListId): SwitchActiveListAction => ({
+    type: types.SWITCH_ACTIVE_LIST,
+    payload: { id },
     from: 'internal',
   }),
 

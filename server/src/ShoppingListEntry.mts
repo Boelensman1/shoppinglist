@@ -1,6 +1,6 @@
 import { JSONSchema, Model, Pojo } from 'objection'
 import z from 'zod'
-import { ItemId, ItemSchema } from '@shoppinglist/shared'
+import { ItemId, ItemSchema, ListId } from '@shoppinglist/shared'
 
 class ShoppingListEntry extends Model {
   id!: ItemId
@@ -8,6 +8,7 @@ class ShoppingListEntry extends Model {
   checked!: boolean
   prevItemId!: ItemId | 'HEAD'
   deleted!: boolean
+  listId!: ListId
   createdAt!: string
   updatedAt?: string
 

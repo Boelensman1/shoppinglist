@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import ShoppingListEntry from '../ShoppingListEntry.mjs'
+import List from '../List.mjs'
 import PushSubscription from '../PushSubscription.mjs'
 
 describe('ShoppingListEntry', () => {
@@ -15,6 +16,7 @@ describe('ShoppingListEntry', () => {
       checked: 1, // SQLite stores booleans as integers
       deleted: 0,
       prevItemId: 'INITIAL',
+      listId: 'default',
     })
 
     expect(parsed.checked).toBe(true)
@@ -29,6 +31,21 @@ describe('ShoppingListEntry', () => {
     expect(schema.required).toContain('checked')
     expect(schema.required).toContain('deleted')
     expect(schema.required).toContain('prevItemId')
+    expect(schema.required).toContain('listId')
+  })
+})
+
+describe('List', () => {
+  it('should have correct table name', () => {
+    expect(List.tableName).toBe('lists')
+  })
+
+  it('should have valid json schema', () => {
+    const schema = List.jsonSchema
+    expect(schema.type).toBe('object')
+    expect(schema.required).toContain('id')
+    expect(schema.required).toContain('name')
+    expect(schema.required).toContain('colour')
   })
 })
 
