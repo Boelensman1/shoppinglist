@@ -8,19 +8,19 @@ This is a Next.js 16 (using app router) application built with React 19, TypeScr
 
 ## Development Commands
 
-### Essential Commands
-
-- **Development server**: `command make dev` - Runs Next.js dev server with Turbopack on port 4101
-- **Build**: `command make build` - Creates production build in `build/` directory
-- **Production server**: `command make serve` - Starts production server after build
-- **Install dependencies**: `command make install`
-- **Clean**: `command make clean` - Removes node_modules
-
 ### Code Quality
 
 - **Prettier fix**: `npx prettier --write .` - Apply prettier format
 - **Lint**: `command make lint` - Runs Prettier formatting check and Next.js ESLint
 - **Test**: `command make test` - Runs Vitest test runner
+
+### Other Commands (these should almost never be ran)
+
+- **Development server**: `command make dev` - Runs Next.js dev server with Turbopack on port 4101. A development server is almost always already running.
+- **Build**: `command make build` - Creates production build in `build/` directory. DO NOT USE THIS FOR TESTING/LINTING. Use command make lint for that.
+- **Production server**: `command make serve` - Starts production server after build
+- **Install dependencies**: `command make install` (also done automatically when running lint/test)
+- **Clean**: `command make clean` - Removes node_modules
 
 For all the make commands, it's extremely important to use the command binary before make! So e.g. run `command make lint` and not just `make lint`
 
@@ -46,7 +46,7 @@ For all the make commands, it's extremely important to use the command binary be
 
 The project uses a Makefile for build orchestration with proper dependency tracking. All commands disable Next.js telemetry via `NEXT_TELEMETRY_DISABLED=1`.
 
-**Important**: The build output directory is customized to `build/` (not `.next/`), configured in next.config.ts with `distDir: 'build'`.
+**Important**: The build output directory is customized to `build/` (not `.next/`), configured in next.config.ts with `distDir: 'build'`. Production builds use standalone output mode.
 
 ### Code Standards
 
