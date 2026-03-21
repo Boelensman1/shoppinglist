@@ -148,6 +148,13 @@ export const addList = async (payload: List) => {
   })
 }
 
+export const updateList = async (payload: List) => {
+  await ListModel.query().findById(payload.id).patch({
+    name: payload.name,
+    colour: payload.colour,
+  })
+}
+
 export const removeList = async (payload: { id: ListId }) => {
   // Prevent deleting the last list
   const count = await ListModel.query().resultSize()

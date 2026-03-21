@@ -12,6 +12,7 @@ import type {
   ParsedMessage_initialFullDataSchema,
   ParsedMessage_removeItemSchema,
   ParsedMessage_removeListSchema,
+  ParsedMessage_updateListSchema,
   ParsedMessage_setListSchema,
   ParsedMessage_signalFinishedShoppingListSchema,
   ParsedMessage_subscribeUserPushNotificationsSchema,
@@ -67,6 +68,9 @@ export type ParsedMessage_initialFullData = z.infer<
 export type ParsedMessage_addList = z.infer<typeof ParsedMessage_addListSchema>
 export type ParsedMessage_removeList = z.infer<
   typeof ParsedMessage_removeListSchema
+>
+export type ParsedMessage_updateList = z.infer<
+  typeof ParsedMessage_updateListSchema
 >
 
 export type ItemRecords = Record<ItemId, Item>

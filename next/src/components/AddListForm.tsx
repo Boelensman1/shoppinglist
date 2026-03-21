@@ -6,19 +6,13 @@ import type { ListId } from 'server/shared'
 import actions from '../store/actions'
 import { useStore } from '../store/useStore'
 import genItemId from '@/utils/genItemId'
+import { COLOUR_PRESETS } from '@/constants'
 
-const COLOUR_PRESETS = [
-  '#3b82f6', // blue
-  '#ef4444', // red
-  '#22c55e', // green
-  '#f97316', // orange
-  '#a855f7', // purple
-  '#ec4899', // pink
-  '#14b8a6', // teal
-  '#eab308', // yellow
-]
+interface AddListFormProps {
+  onListAdded?: () => void
+}
 
-export default function AddListForm() {
+export default function AddListForm({ onListAdded }: AddListFormProps) {
   const { dispatch } = useStore()
   const [showAddList, setShowAddList] = useState(false)
   const [newListName, setNewListName] = useState('')
@@ -38,16 +32,19 @@ export default function AddListForm() {
     setNewListColour(COLOUR_PRESETS[0])
     setShowAddList(false)
     dispatch(actions.switchActiveList(id))
+    onListAdded?.()
   }
 
   return (
     <>
-      <button
-        className="bg-gray-300 text-gray-700 p-2 rounded-full shadow-lg px-3 text-sm"
-        onClick={() => setShowAddList(!showAddList)}
-      >
-        + List
-      </button>
+      {!showAddList && (
+        <button
+          className="bg-gray-300 text-gray-700 p-1.5 rounded-md px-3 text-sm"
+          onClick={() => setShowAddList(true)}
+        >
+          Add list
+        </button>
+      )}
       {showAddList && (
         <div className="bg-white rounded-lg shadow-lg p-3 flex flex-col gap-2 min-w-[200px]">
           <input
@@ -73,13 +70,25 @@ export default function AddListForm() {
               />
             ))}
           </div>
-          <button
-            className="bg-blue-500 text-white rounded p-1.5 text-sm disabled:opacity-50"
-            onClick={handleAddList}
-            disabled={!newListName.trim()}
-          >
-            Add list
-          </button>
+          <div className="flex gap-2">
+            <button
+              className="flex-1 bg-gray-200 text-gray-700 rounded p-1.5 text-sm"
+              onClick={() => {
+                setShowAddList(false)
+                setNewListName('')
+                setNewListColour(COLOUR_PRESETS[0])
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              className="flex-1 bg-blue-500 text-white rounded p-1.5 text-sm disabled:opacity-50"
+              onClick={handleAddList}
+              disabled={!newListName.trim()}
+            >
+              Add list
+            </button>
+          </div>
         </div>
       )}
     </>

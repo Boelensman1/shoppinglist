@@ -7,6 +7,7 @@ import { useMediaQuery } from '../hooks/useMediaQuery'
 import { useStore } from '../store/useStore'
 
 import UndoRedoHandler from '../components/UndoRedoHandler'
+import ListTitle from '../components/ListTitle'
 import ShoppingList from '../components/ShoppingList'
 import ActionButtons from '../components/ActionButtons'
 import { isLoaded } from '@/store/utils'
@@ -62,9 +63,10 @@ export default function App() {
               'bg-white',
               useMobileLayout
                 ? ' py-3 px-1'
-                : ' max-w-xl mx-auto py-5 pr-6 pl-4 rounded-sm shadow-md border border-gray-200',
+                : ' max-w-xl mx-auto pb-5 pt-4 pr-6 pl-4 rounded-sm shadow-md border border-gray-200',
             )}
           >
+            <ListTitle useMobileLayout={useMobileLayout} />
             <ShoppingList
               items={displayItems}
               listColour={activeList?.colour ?? '#3b82f6'}

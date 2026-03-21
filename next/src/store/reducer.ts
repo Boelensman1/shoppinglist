@@ -181,6 +181,14 @@ const applyAction = (
       }
       break
     }
+    case types.UPDATE_LIST: {
+      const list = action.payload
+      if (draft.lists[list.id]) {
+        draft.lists[list.id].name = list.name
+        draft.lists[list.id].colour = list.colour
+      }
+      break
+    }
     case types.REMOVE_LIST: {
       const { id } = action.payload
       delete draft.lists[id]

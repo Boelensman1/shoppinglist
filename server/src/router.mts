@@ -13,6 +13,7 @@ import {
   ParsedMessage_setListSchema,
   ParsedMessage_addListSchema,
   ParsedMessage_removeListSchema,
+  ParsedMessage_updateListSchema,
   ParsedMessage_subscribeUserPushNotificationsSchema,
   ParsedMessage_unSubscribeUserPushNotificationsSchema,
   ParsedMessage_signalFinishedShoppingListSchema,
@@ -99,6 +100,16 @@ export const appRouter = router({
       ee.emit('broadcast', {
         sessionId: ctx.sessionId,
         data: { type: 'ADD_LIST', payload: input },
+      })
+    }),
+
+  updateList: publicProcedure
+    .input(ParsedMessage_updateListSchema.shape.payload)
+    .mutation(async ({ input, ctx }) => {
+      await handlers.updateList(input)
+      ee.emit('broadcast', {
+        sessionId: ctx.sessionId,
+        data: { type: 'UPDATE_LIST', payload: input },
       })
     }),
 

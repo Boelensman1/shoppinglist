@@ -18,6 +18,7 @@ export const messageTypes = {
   INITIAL_FULL_DATA: 'INITIAL_FULL_DATA' as const,
   ADD_LIST: 'ADD_LIST' as const,
   REMOVE_LIST: 'REMOVE_LIST' as const,
+  UPDATE_LIST: 'UPDATE_LIST' as const,
 }
 
 export const ItemIdSchema = z.string().brand('ItemId')
@@ -151,6 +152,11 @@ export const ParsedMessage_removeListSchema = z.object({
   }),
 })
 
+export const ParsedMessage_updateListSchema = z.object({
+  type: z.literal(messageTypes.UPDATE_LIST),
+  payload: ListSchema,
+})
+
 const parsedMessageNotUndoableList = [
   ParsedMessage_syncWithServerSchema,
   ParsedMessage_signalFinishedShoppingListSchema,
@@ -158,6 +164,7 @@ const parsedMessageNotUndoableList = [
   ParsedMessage_unSubscribeUserPushNotificationsSchema,
   ParsedMessage_addListSchema,
   ParsedMessage_removeListSchema,
+  ParsedMessage_updateListSchema,
 ] as const
 
 export const ParsedMessageUndoableSchema = z.discriminatedUnion('type', [

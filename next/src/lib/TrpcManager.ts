@@ -144,6 +144,9 @@ class TrpcManager {
       case 'ADD_LIST':
         trackMutation(client.addList.mutate(stripped.payload as never))
         break
+      case 'UPDATE_LIST':
+        trackMutation(client.updateList.mutate(stripped.payload as never))
+        break
       case 'REMOVE_LIST':
         trackMutation(client.removeList.mutate(stripped.payload as never))
         break

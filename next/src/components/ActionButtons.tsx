@@ -2,11 +2,9 @@
 
 import clsx from 'clsx'
 import { useState } from 'react'
-import type { ListId } from 'server/shared'
 import { getUndoRedoStore } from './UndoRedoHandler'
 import actions from '../store/actions'
 import { useStore } from '../store/useStore'
-import AddListForm from './AddListForm'
 
 interface ActionButtonsProps {
   useMobileLayout: boolean
@@ -16,14 +14,6 @@ export default function ActionButtons({ useMobileLayout }: ActionButtonsProps) {
   const { dispatch, state, pushSub } = useStore()
   const [showButtons, setShowButtons] = useState(false)
   const [signalSent, setSignalSent] = useState(false)
-
-  const lists = Object.values(state.lists)
-
-  const handleRemoveList = (id: ListId) => {
-    if (id === ('default' as ListId)) return
-    if (!confirm('Remove this list and all its items?')) return
-    dispatch(actions.removeList(id))
-  }
 
   return (
     <>
@@ -76,35 +66,6 @@ export default function ActionButtons({ useMobileLayout }: ActionButtonsProps) {
               </svg>
             </button>
           )}
-          {/* List switcher */}
-          <div className="flex gap-1 flex-wrap items-center">
-            {lists.map((list) => (
-              <div key={list.id} className="flex items-center gap-0.5">
-                <button
-                  className={clsx(
-                    'p-2 rounded-full shadow-lg px-3 text-white text-sm',
-                    state.activeListId === list.id &&
-                      'ring-2 ring-white ring-offset-2',
-                  )}
-                  style={{ backgroundColor: list.colour }}
-                  onClick={() => dispatch(actions.switchActiveList(list.id))}
-                >
-                  {list.name}
-                </button>
-                {list.id !== ('default' as ListId) && (
-                  <button
-                    className="text-red-400 hover:text-red-600 text-xs w-5 h-5 flex items-center justify-center"
-                    onClick={() => handleRemoveList(list.id)}
-                    title="Remove list"
-                  >
-                    x
-                  </button>
-                )}
-              </div>
-            ))}
-            <AddListForm />
-          </div>
-
           {useMobileLayout && (
             <>
               <button

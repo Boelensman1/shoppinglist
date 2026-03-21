@@ -11,6 +11,7 @@ import type {
   AddListItemAction,
   AddListAction,
   RemoveListAction,
+  UpdateListAction,
   SwitchActiveListAction,
   WebsocketConnectionStateChangedAction,
   RedoAction,
@@ -216,6 +217,12 @@ const actions = {
 
   addList: (list: List): AddListAction => ({
     type: types.ADD_LIST,
+    payload: list,
+    from: 'user',
+  }),
+
+  updateList: (list: List): UpdateListAction => ({
+    type: types.UPDATE_LIST,
     payload: list,
     from: 'user',
   }),

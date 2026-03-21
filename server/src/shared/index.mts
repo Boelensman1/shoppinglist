@@ -16,6 +16,7 @@ export {
   ParsedMessage_unSubscribeUserPushNotificationsSchema,
   ParsedMessage_addListSchema,
   ParsedMessage_removeListSchema,
+  ParsedMessage_updateListSchema,
   ParsedMessageUndoableSchema,
   messageTypes,
 } from './schemas.mjs'
@@ -37,6 +38,7 @@ export type {
   ParsedMessage_clearList,
   ParsedMessage_removeItem,
   ParsedMessage_removeList,
+  ParsedMessage_updateList,
   ParsedMessage_setList,
   ParsedMessage_signalFinishedShoppingList,
   ParsedMessage_subscribeUserPushNotifications,

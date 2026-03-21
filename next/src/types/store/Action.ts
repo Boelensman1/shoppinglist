@@ -6,6 +6,7 @@ import type {
   ParsedMessage_initialFullData,
   ParsedMessage_removeItem,
   ParsedMessage_removeList,
+  ParsedMessage_updateList,
   ParsedMessage_setList,
   ParsedMessage_signalFinishedShoppingList,
   ParsedMessage_subscribeUserPushNotifications,
@@ -88,6 +89,8 @@ export type AddListAction = BaseAction & ParsedMessage_addList
 
 export type RemoveListAction = BaseAction & ParsedMessage_removeList
 
+export type UpdateListAction = BaseAction & ParsedMessage_updateList
+
 export interface SwitchActiveListAction extends BaseAction {
   type: typeof types.SWITCH_ACTIVE_LIST
   payload: { id: ListId }
@@ -135,6 +138,7 @@ export type Action =
   | UnSubscribeUserPushNotifications
   | AddListAction
   | RemoveListAction
+  | UpdateListAction
   | SwitchActiveListAction
   | UpdateUserIdAction
   | UpdateHasPushSubscriptionAction
