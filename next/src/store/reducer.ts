@@ -203,12 +203,14 @@ const applyAction = (
         const remainingIds = Object.keys(draft.lists) as ListId[]
         if (remainingIds.length > 0) {
           draft.activeListId = remainingIds[0]
+          localStorage.setItem('activeListId', remainingIds[0])
         }
       }
       break
     }
     case types.SWITCH_ACTIVE_LIST: {
       draft.activeListId = action.payload.id
+      localStorage.setItem('activeListId', action.payload.id)
       break
     }
     case types.UNDO: {
