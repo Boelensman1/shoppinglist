@@ -9,7 +9,7 @@ const revision = swDisabled
   : spawnSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf-8' }).stdout
 
 const withSerwist = withSerwistInit({
-  additionalPrecacheEntries: [{ url: '/~offline', revision }],
+  additionalPrecacheEntries: [{ url: '/', revision }],
   cacheOnNavigation: true,
   swSrc: 'src/app/sw.ts',
   swDest: 'public/sw.js',
