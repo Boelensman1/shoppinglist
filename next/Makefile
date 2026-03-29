@@ -19,8 +19,7 @@ dev: $(INSTALL_DEPS)
 	NEXT_PUBLIC_LOCAL=1 NEXT_PUBLIC_DISABLE_SW=1 NEXT_TELEMETRY_DISABLED=1 PORT=4101 pnpm --no-install next dev --turbopack
 
 test: $(INSTALL_DEPS)
-	echo 'no tests yet'
-	#pnpm vitest
+	pnpm vitest run
 
 node_modules: ../server/build
 	$(MAKE) -C .. install
