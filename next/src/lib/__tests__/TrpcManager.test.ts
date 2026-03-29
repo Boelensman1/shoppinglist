@@ -560,7 +560,7 @@ describe('TrpcManager', () => {
       })
     })
 
-    it('clears queues after sync', () => {
+    it('clears queues after sync', async () => {
       manager.connect('ws://test', dispatch)
 
       // Queue an action
@@ -578,6 +578,10 @@ describe('TrpcManager', () => {
           payload: { id: 'item1', newChecked: true },
         },
       ])
+
+      // Resolve the first sync so syncInProgress clears
+      syncDeferred1.resolve({ items: {}, lists: {} })
+      await flushPromises()
 
       // Disconnect and reconnect again — second sync should have empty queue
       mockCallbacks.onClose!()
@@ -597,7 +601,7 @@ describe('TrpcManager', () => {
       // Non-undoable action (falls through to default case, gets queued)
       manager.sendAction({
         type: 'SIGNAL_FINISHED_SHOPPINGLIST' as const,
-        payload: { listId: 'default' as ListId, userId: 'u1' },
+        payload: { userId: 'u1' },
         from: 'user',
       })
 
@@ -977,17 +981,17 @@ describe('TrpcManager', () => {
         },
       ])
 
-      // Sync fails (server unreachable, timeout, etc.)
+      // Sync fails — .catch restores actions, .finally clears syncInProgress
       failedSync.reject(new Error('sync failed'))
       await flushPromises()
 
-      // Disconnect and reconnect — actions should NOT be lost
+      // Disconnect and reconnect to trigger a new sync attempt
       mockCallbacks.onClose!()
       const retrySync = deferred<{ items: object; lists: object }>()
       mockMutations.syncWithServer.mockReturnValueOnce(retrySync.promise)
       simulateReconnect()
 
-      // The second sync attempt should still contain the original actions
+      // The retry sync should still contain the original actions
       const lastCall = mockMutations.syncWithServer.mock.calls.at(
         -1,
       )![0] as Action[]
@@ -1035,6 +1039,46 @@ describe('TrpcManager', () => {
         -1,
       )![0] as Action[]
       expect(lastCall).toEqual([
+        {
+          type: 'UPDATE_LIST_ITEM_CHECKED',
+          payload: { id: 'item1', newChecked: true },
+        },
+      ])
+    })
+  })
+
+  // =====================
+  // syncInProgress serialization
+  // =====================
+  describe('syncInProgress serialization', () => {
+    it('concurrent sync calls are serialized via pendingResync', async () => {
+      connectAndOpen()
+
+      // First sync (from subscription onStarted)
+      const sync1 = deferred<{ items: object; lists: object }>()
+      mockMutations.syncWithServer.mockReturnValueOnce(sync1.promise)
+      mockSubCallbacks.onStarted!()
+      expect(mockMutations.syncWithServer).toHaveBeenCalledTimes(1)
+
+      // Queue an action while sync1 is in-flight
+      manager.sendAction(makeCheckAction('item1', true))
+
+      // Trigger another sync (e.g. visibility change) — should be deferred
+      const sync2 = deferred<{ items: object; lists: object }>()
+      mockMutations.syncWithServer.mockReturnValueOnce(sync2.promise)
+      mockSubCallbacks.onStarted!()
+      // Still only 1 call — the second was queued as pendingResync
+      expect(mockMutations.syncWithServer).toHaveBeenCalledTimes(1)
+
+      // First sync completes — pendingResync triggers second sync automatically
+      sync1.resolve({ items: {}, lists: {} })
+      await flushPromises()
+
+      // Now the second sync should have fired, including the action queued while sync1 was in-flight
+      expect(mockMutations.syncWithServer).toHaveBeenCalledTimes(2)
+      const secondCall = mockMutations.syncWithServer.mock
+        .calls[1][0] as Action[]
+      expect(secondCall).toEqual([
         {
           type: 'UPDATE_LIST_ITEM_CHECKED',
           payload: { id: 'item1', newChecked: true },
