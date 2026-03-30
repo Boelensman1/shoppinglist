@@ -15,6 +15,7 @@ import { useStore } from '@/store/useStore'
 import actions from '@/store/actions'
 import genItemId from '@/utils/genItemId'
 import type { ItemWithDisplayedInfo } from '@/utils/itemsToList'
+import { clientHlcNow } from '@/lib/hlcClient'
 
 const parsePasteLineValue = (line: string) => {
   let parsedLine = line.trim()
@@ -40,7 +41,7 @@ interface ShoppingListItemProps extends ItemWithDisplayedInfo {
   listColour: string
 }
 
-type Line = Omit<Item, 'prevItemId' | 'listId'>
+type Line = Omit<Item, 'prevItemId' | 'listId' | 'hlcTimestamp'>
 
 const ShoppingListItem: React.FC<ShoppingListItemProps> = (props) => {
   const { state, dispatch } = useStore()
@@ -55,21 +56,33 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = (props) => {
   }, [state.focusTargetId, props.id, dispatch])
 
   const handleInput = (event: ChangeEvent<HTMLInputElement>) => {
-    dispatch(actions.updateListItemValue(props.id, event.currentTarget.value))
+    dispatch(
+      actions.updateListItemValue(
+        props.id,
+        event.currentTarget.value,
+        clientHlcNow(),
+      ),
+    )
   }
 
   const handleChecked = () => {
-    dispatch(actions.updateListItemChecked(props.id, !props.checked))
+    dispatch(
+      actions.updateListItemChecked(props.id, !props.checked, clientHlcNow()),
+    )
   }
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
-      dispatch(actions.addListItem(props.id, state.activeListId))
+      dispatch(
+        actions.addListItem(props.id, state.activeListId, clientHlcNow()),
+      )
     }
     if (event.key === 'Tab') {
       if (props.isLast) {
         event.preventDefault()
-        dispatch(actions.addListItem(props.id, state.activeListId))
+        dispatch(
+          actions.addListItem(props.id, state.activeListId, clientHlcNow()),
+        )
       }
     }
 
@@ -81,6 +94,7 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = (props) => {
             id: props.id,
             displayedPrevItemId: props.displayedPrevItemId,
             displayedNextItemId: props.displayedNextItemId,
+            hlcTimestamp: clientHlcNow(),
           }),
         )
       }
@@ -123,15 +137,23 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = (props) => {
       props.value.slice(selectionEnd)
 
     const batch = []
-    batch.push(actions.updateListItemValue(props.id, newValue))
+    batch.push(actions.updateListItemValue(props.id, newValue, clientHlcNow()))
 
     if (firstLine.checked && firstLine.checked != props.checked) {
-      batch.push(actions.updateListItemChecked(props.id, firstLine.checked))
+      batch.push(
+        actions.updateListItemChecked(
+          props.id,
+          firstLine.checked,
+          clientHlcNow(),
+        ),
+      )
     }
 
     let lastId = props.id
     lines.forEach((line) => {
-      batch.push(actions.addListItem(lastId, state.activeListId, line))
+      batch.push(
+        actions.addListItem(lastId, state.activeListId, clientHlcNow(), line),
+      )
       lastId = line.id
     })
 

@@ -152,7 +152,10 @@ const parsedMessageUndoableList = [
 
 export const ParsedMessage_addListSchema = z.object({
   type: z.literal(messageTypes.ADD_LIST),
-  payload: ListSchema,
+  payload: z.object({
+    ...ListSchema.shape,
+    ...HlcSchema.shape,
+  }),
 })
 
 export const ParsedMessage_removeListSchema = z.object({

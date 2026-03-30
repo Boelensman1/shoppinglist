@@ -3,6 +3,7 @@
 import { useEffect, useCallback } from 'react'
 import { useStore } from '../store/useStore'
 import actions from '../store/actions'
+import { clientHlcNow } from '../lib/hlcClient'
 
 // Create a store for undo/redo functions
 let undoRedoStore: {
@@ -18,14 +19,14 @@ const UndoRedoHandler: React.FC = () => {
   const undo = useCallback(() => {
     const actionToUndo = state.undoList[state.undoList.length - 1]
     if (actionToUndo) {
-      dispatch(actions.undo(actionToUndo))
+      dispatch(actions.undo(actionToUndo, clientHlcNow()))
     }
   }, [state.undoList, dispatch])
 
   const redo = useCallback(() => {
     const actionToRedo = state.redoList[state.redoList.length - 1]
     if (actionToRedo) {
-      dispatch(actions.redo(actionToRedo))
+      dispatch(actions.redo(actionToRedo, clientHlcNow()))
     }
   }, [state.redoList, dispatch])
 

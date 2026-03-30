@@ -6,6 +6,7 @@ import type { ListId } from 'server/shared'
 import actions from '../store/actions'
 import { useStore } from '../store/useStore'
 import genItemId from '@/utils/genItemId'
+import { clientHlcNow } from '@/lib/hlcClient'
 import { COLOUR_PRESETS } from '@/constants'
 
 interface AddListFormProps {
@@ -22,11 +23,14 @@ export default function AddListForm({ onListAdded }: AddListFormProps) {
     if (!newListName.trim()) return
     const id = genItemId() as unknown as ListId
     dispatch(
-      actions.addList({
-        id,
-        name: newListName.trim(),
-        colour: newListColour,
-      }),
+      actions.addList(
+        {
+          id,
+          name: newListName.trim(),
+          colour: newListColour,
+        },
+        clientHlcNow(),
+      ),
     )
     setNewListName('')
     setNewListColour(COLOUR_PRESETS[0])

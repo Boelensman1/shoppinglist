@@ -71,6 +71,7 @@ describe('addList', () => {
       id: 'list-1' as ListId,
       name: 'Hardware Store',
       colour: '#ef4444',
+      hlcTimestamp: TS_TEST,
     }
 
     await handlers.addList(newList)
@@ -88,6 +89,7 @@ describe('addList', () => {
       id: 'list-1' as ListId,
       name: 'Hardware Store',
       colour: '#ef4444',
+      hlcTimestamp: TS_TEST,
     }
 
     await handlers.addList(newList)

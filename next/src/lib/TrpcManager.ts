@@ -3,6 +3,7 @@ import type { Dispatch } from '../types/store/Dispatch'
 import type { ItemRecords, ListRecords } from 'server/shared'
 import actions, { isUndoableAction } from '../store/actions'
 import { createTrpcClient, type TrpcClient } from './trpc'
+import { clientHlcReceive } from './hlcClient'
 
 /**
  * Strip client-only fields (`from`, `redo`) from actions before sending to tRPC.
@@ -29,6 +30,8 @@ class TrpcManager {
 
   private offlineMessageQueue: Action[] = []
   private unconfirmedActions: Action[] = []
+  private syncInProgress = false
+  private pendingResync = false
 
   get isConnected() {
     return this.connected
@@ -66,6 +69,10 @@ class TrpcManager {
       },
       onData: (data) => {
         const action = data as Record<string, unknown>
+        const payload = action.payload as Record<string, unknown> | undefined
+        if (payload?.hlcTimestamp && typeof payload.hlcTimestamp === 'string') {
+          clientHlcReceive(payload.hlcTimestamp)
+        }
         dispatch({
           ...action,
           from: 'server',
@@ -192,31 +199,54 @@ class TrpcManager {
   syncWithServer() {
     if (!this.trpc || !this.dispatch) return
 
-    // Include any still-unconfirmed actions (in-flight mutations that haven't resolved)
+    if (this.syncInProgress) {
+      this.pendingResync = true
+      return
+    }
+
+    this.syncInProgress = true
+
+    // Snapshot the current queues
     this.offlineMessageQueue.push(...this.unconfirmedActions)
     this.unconfirmedActions = []
-
-    const offlineActions = this.offlineMessageQueue.filter((action) =>
-      isUndoableAction(action),
-    )
+    const syncingQueue = [...this.offlineMessageQueue]
     this.offlineMessageQueue = []
 
-    const strippedActions = offlineActions.map(
-      (a) =>
-        stripClientFields(a as unknown as Record<string, unknown>) as never,
-    )
+    const strippedActions = syncingQueue
+      .filter((action) => isUndoableAction(action))
+      .map(
+        (a) =>
+          stripClientFields(a as unknown as Record<string, unknown>) as never,
+      )
 
     const dispatch = this.dispatch
     this.trpc.client.syncWithServer
       .mutate(strippedActions)
       .then((fullData: { items: ItemRecords; lists: ListRecords }) => {
+        // Advance client HLC from server state
+        for (const item of Object.values(fullData.items)) {
+          if (item.hlcTimestamp) {
+            clientHlcReceive(item.hlcTimestamp)
+          }
+        }
         dispatch({
           type: 'INITIAL_FULL_DATA' as const,
           payload: fullData,
           from: 'server',
         })
       })
-      .catch(console.error)
+      .catch((err) => {
+        console.error(err)
+        // Restore actions to front of queue on failure
+        this.offlineMessageQueue.unshift(...syncingQueue)
+      })
+      .finally(() => {
+        this.syncInProgress = false
+        if (this.pendingResync) {
+          this.pendingResync = false
+          this.syncWithServer()
+        }
+      })
   }
 }
 

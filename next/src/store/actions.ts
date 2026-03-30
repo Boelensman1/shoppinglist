@@ -18,6 +18,7 @@ import type {
   RemoveListItemAction,
   UndoAction,
   UndoableAction,
+  UndoEntry,
   UpdateListItemCheckedAction,
   UpdateListItemValueAction,
   SyncWithServerAction,
@@ -70,14 +71,19 @@ const actions = {
     id: ItemId
     displayedPrevItemId?: ItemId
     displayedNextItemId?: ItemId
+    hlcTimestamp: string
   }): RemoveListItemAction => ({
     type: types.REMOVE_LIST_ITEM,
     payload,
     from: 'user',
   }),
-  clear: (listId: ListId): ClearListAction => ({
+  clear: (
+    listId: ListId,
+
+    hlcTimestamp: string,
+  ): ClearListAction => ({
     type: types.CLEAR_LIST,
-    payload: { listId },
+    payload: { listId, hlcTimestamp },
     from: 'user',
   }),
   executeBatch: (batchActions: UndoableAction[]): BatchAction => ({
@@ -88,6 +94,7 @@ const actions = {
   clearCheckedItems: (
     items: Item[],
     listId: ListId,
+    hlcTimestamp: string,
   ): BatchAction | ClearListAction => {
     const nonDeletedItems = items.filter((item: Item) => !item.deleted)
 
@@ -99,7 +106,7 @@ const actions = {
     if (checkedItemIds.length === nonDeletedItems.length) {
       return {
         type: types.CLEAR_LIST,
-        payload: { listId },
+        payload: { listId, hlcTimestamp },
         from: 'user',
       }
     }
@@ -111,7 +118,7 @@ const actions = {
       ...checkedItemIds.map(
         (id): RemoveListItemAction => ({
           type: types.REMOVE_LIST_ITEM,
-          payload: { id },
+          payload: { id, hlcTimestamp },
           from: 'user',
         }),
       ),
@@ -122,17 +129,21 @@ const actions = {
   addListItem: (
     prevItemId: ItemId,
     listId: ListId,
-    item?: Omit<Item, 'prevItemId' | 'listId'>,
+    hlcTimestamp: string,
+    item?: Omit<Item, 'prevItemId' | 'listId' | 'hlcTimestamp'>,
   ): AddListItemAction => {
     return {
       type: types.ADD_LIST_ITEM,
       payload: {
-        ...(item ?? {
-          id: genItemId(),
-          value: '',
-          checked: false,
-          deleted: false,
-        }),
+        ...(item
+          ? { ...item, hlcTimestamp }
+          : {
+              id: genItemId(),
+              value: '',
+              checked: false,
+              deleted: false,
+              hlcTimestamp,
+            }),
         prevItemId,
         listId,
       },
@@ -142,27 +153,31 @@ const actions = {
   updateListItemValue: (
     id: ItemId,
     newValue: string,
+    hlcTimestamp: string,
   ): UpdateListItemValueAction => ({
     type: types.UPDATE_LIST_ITEM_VALUE,
-    payload: { id, newValue },
+    payload: { id, newValue, hlcTimestamp },
     from: 'user',
   }),
   updateListItemChecked: (
     id: ItemId,
     newChecked: boolean,
+    hlcTimestamp: string,
   ): UpdateListItemCheckedAction => ({
     type: types.UPDATE_LIST_ITEM_CHECKED,
-    payload: { id, newChecked },
+    payload: { id, newChecked, hlcTimestamp },
     from: 'user',
   }),
-  undo: (action: UndoableAction): UndoAction => ({
+  undo: (action: UndoEntry, hlcTimestamp: string): UndoAction => ({
     type: types.UNDO,
     payload: action,
+    hlcTimestamp,
     from: 'user',
   }),
-  redo: (action: UndoableAction): RedoAction => ({
+  redo: (action: UndoEntry, hlcTimestamp: string): RedoAction => ({
     type: types.REDO,
     payload: action,
+    hlcTimestamp,
     from: 'user',
   }),
 
@@ -215,9 +230,9 @@ const actions = {
     from: 'internal',
   }),
 
-  addList: (list: List): AddListAction => ({
+  addList: (list: List, hlcTimestamp: string): AddListAction => ({
     type: types.ADD_LIST,
-    payload: list,
+    payload: { ...list, hlcTimestamp },
     from: 'user',
   }),
 

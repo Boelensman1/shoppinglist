@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { getUndoRedoStore } from './UndoRedoHandler'
 import actions from '../store/actions'
 import { useStore } from '../store/useStore'
+import { clientHlcNow } from '@/lib/hlcClient'
 
 interface ActionButtonsProps {
   useMobileLayout: boolean
@@ -125,7 +126,11 @@ export default function ActionButtons({ useMobileLayout }: ActionButtonsProps) {
                 (item) => item.listId === state.activeListId,
               )
               dispatch(
-                actions.clearCheckedItems(activeItems, state.activeListId),
+                actions.clearCheckedItems(
+                  activeItems,
+                  state.activeListId,
+                  clientHlcNow(),
+                ),
               )
               window.scrollTo({ top: 0 })
               setShowButtons(false)
@@ -136,7 +141,7 @@ export default function ActionButtons({ useMobileLayout }: ActionButtonsProps) {
           <button
             className="bg-red-500 text-white p-2 rounded-full shadow-lg px-4"
             onClick={() => {
-              dispatch(actions.clear(state.activeListId))
+              dispatch(actions.clear(state.activeListId, clientHlcNow()))
               window.scrollTo({ top: 0 })
               setShowButtons(false)
             }}

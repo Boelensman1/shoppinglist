@@ -54,12 +54,14 @@ export type SetListAction = RedoableBaseAction & ParsedMessage_setList
 
 export interface UndoAction extends BaseAction {
   type: typeof types.UNDO
-  payload: UndoableAction
+  payload: UndoEntry
+  hlcTimestamp: string
 }
 
 export interface RedoAction extends BaseAction {
   type: typeof types.REDO
-  payload: UndoableAction
+  payload: UndoEntry
+  hlcTimestamp: string
 }
 
 export interface WebsocketConnectionStateChangedAction extends BaseAction {
@@ -124,6 +126,15 @@ export type UndoableAction =
   | ClearListAction
   | SetListAction
   | BatchAction
+
+// UndoableAction but with hlcTimestamp omitted from the payload (to be filled in at undo time)
+type OmitHlcFromPayload<T> = T extends { payload: (infer E)[] }
+  ? Omit<T, 'payload'> & { payload: OmitHlcFromPayload<E>[] }
+  : T extends { payload: infer P }
+    ? Omit<T, 'payload'> & { payload: Omit<P, 'hlcTimestamp'> }
+    : T
+
+export type UndoEntry = OmitHlcFromPayload<UndoableAction>
 
 export type Action =
   | UndoableAction

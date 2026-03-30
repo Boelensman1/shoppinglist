@@ -237,6 +237,7 @@ describe('ParsedMessageSchema', () => {
           id: 'list-1',
           name: 'Groceries',
           colour: '#3b82f6',
+          hlcTimestamp: '0000000000000:00000:test',
         },
       }
 

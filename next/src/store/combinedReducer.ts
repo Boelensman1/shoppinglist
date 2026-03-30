@@ -1,7 +1,7 @@
 import type TrpcManager from '@/lib/TrpcManager'
 import type IndexedDbManager from '@/lib/IndexedDbManager'
 import type { Action } from '../types/store/Action'
-import reducer from './reducer'
+import reducer, { injectHlcTimestamp } from './reducer'
 import { State } from '@/types/store/State'
 
 export const combinedReducer =
@@ -19,7 +19,7 @@ export const combinedReducer =
 const trpcSend = (trpcm: TrpcManager, action: Action) => {
   if (action.from === 'user') {
     if (action.type === 'UNDO' || action.type === 'REDO') {
-      trpcm.sendAction(action.payload)
+      trpcm.sendAction(injectHlcTimestamp(action.payload, action.hlcTimestamp))
     } else {
       trpcm.sendAction(action)
     }

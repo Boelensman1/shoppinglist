@@ -3,21 +3,37 @@ import type { State } from '../types/store/State'
 import type { Action } from '../types/store/Action'
 
 import { types } from './actions'
-import { UndoableAction } from '../types/store/Action'
+import { UndoableAction, UndoEntry } from '../types/store/Action'
 
 const canUndo = (action: UndoableAction) =>
   !action.redo && action.from === 'user'
 
+export const injectHlcTimestamp = (
+  entry: UndoEntry,
+  hlcTimestamp: string,
+): UndoableAction => {
+  if (Array.isArray(entry.payload)) {
+    return {
+      ...entry,
+      payload: entry.payload.map((e) => injectHlcTimestamp(e, hlcTimestamp)),
+    } as UndoableAction
+  }
+  return {
+    ...entry,
+    payload: { ...entry.payload, hlcTimestamp },
+  } as UndoableAction
+}
+
 const applyAction = (
   action: Action,
   draft: State,
-  seperateUndoList?: UndoableAction[],
+  seperateUndoList?: UndoEntry[],
 ) => {
   const undoList = seperateUndoList ?? draft.undoList
 
   switch (action.type) {
     case types.BATCH: {
-      const batchUndoList: UndoableAction[] = []
+      const batchUndoList: UndoEntry[] = []
       // Execute each action in the batch
       action.payload.forEach((batchAction) => {
         applyAction(batchAction, draft, batchUndoList)
@@ -51,6 +67,7 @@ const applyAction = (
       const { id } = action.payload
       const deletedItem = draft.items[id]
       draft.items[id].deleted = true
+      draft.items[id].hlcTimestamp = action.payload.hlcTimestamp
 
       // focus the previous item
       if (action.payload.displayedNextItemId) {
@@ -100,6 +117,7 @@ const applyAction = (
         checked: false,
         deleted: false,
         listId,
+        hlcTimestamp: action.payload.hlcTimestamp,
       }
       break
     }
@@ -116,6 +134,7 @@ const applyAction = (
         })
       }
       draft.items[id].value = action.payload.newValue
+      draft.items[id].hlcTimestamp = action.payload.hlcTimestamp
 
       break
     }
@@ -136,6 +155,7 @@ const applyAction = (
       draft.items[id] = {
         ...draft.items[id],
         checked: action.payload.newChecked,
+        hlcTimestamp: action.payload.hlcTimestamp,
       }
 
       break
@@ -147,7 +167,43 @@ const applyAction = (
     case types.INITIAL_FULL_DATA: {
       // check that we don't overwrite the server data with idbm data
       if (action.from !== 'idbm' || draft.serverLoaded !== true) {
-        draft.items = action.payload.items
+        const incoming = action.payload.items
+
+        if (action.from === 'server') {
+          // Per-item LWW merge: keep whichever has the newer timestamp
+          for (const [id, serverItem] of Object.entries(incoming)) {
+            const localItem = draft.items[id as ItemId]
+            if (
+              !localItem ||
+              serverItem.hlcTimestamp >= localItem.hlcTimestamp
+            ) {
+              draft.items[id as ItemId] = serverItem
+            }
+          }
+          // Remove items that exist locally but not on server,
+          // only if we can confirm they're older than the server state.
+          // Items with newer timestamps were added locally and haven't
+          // been synced yet — keep them.
+          const maxServerTs = Object.values(incoming).reduce<string>(
+            (max, item) =>
+              item.hlcTimestamp && item.hlcTimestamp > max
+                ? item.hlcTimestamp
+                : max,
+            '',
+          )
+          for (const id of Object.keys(draft.items)) {
+            if (!incoming[id as ItemId]) {
+              const localTs = draft.items[id as ItemId].hlcTimestamp
+              if (maxServerTs && localTs && localTs <= maxServerTs) {
+                delete draft.items[id as ItemId]
+              }
+            }
+          }
+        } else {
+          // For idbm loads, wholesale replace (no merge needed)
+          draft.items = incoming
+        }
+
         draft.lists = action.payload.lists
         // Set activeListId if not yet set or if current active list doesn't exist
         if (!draft.activeListId || !action.payload.lists[draft.activeListId]) {
@@ -178,6 +234,7 @@ const applyAction = (
         checked: false,
         deleted: false,
         listId: list.id as unknown as ListId,
+        hlcTimestamp: action.payload.hlcTimestamp,
       }
       break
     }
@@ -217,7 +274,11 @@ const applyAction = (
       const index = draft.undoList.indexOf(action.payload)
       draft.undoList.splice(index, 1)
 
-      applyAction(action.payload, draft, undoList)
+      const withTimestamp = injectHlcTimestamp(
+        action.payload,
+        action.hlcTimestamp,
+      )
+      applyAction(withTimestamp, draft, undoList)
       if (action.payload.redo) {
         draft.redoList.push(action.payload.redo)
       }
@@ -227,7 +288,11 @@ const applyAction = (
       const index = draft.redoList.indexOf(action.payload)
       draft.redoList.splice(index, 1)
 
-      applyAction(action.payload, draft, undoList)
+      const withTimestamp = injectHlcTimestamp(
+        action.payload,
+        action.hlcTimestamp,
+      )
+      applyAction(withTimestamp, draft, undoList)
       break
     }
 

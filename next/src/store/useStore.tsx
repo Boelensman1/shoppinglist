@@ -19,6 +19,7 @@ import IndexedDbManager from '../lib/IndexedDbManager'
 import PushNotificationManager from '../lib/PushNotificationManager'
 import actions, { types } from './actions'
 import { itemsListToRecords, type ListId } from 'server/shared'
+import { initClientHlc } from '../lib/hlcClient'
 
 const IS_LOCAL = process.env.NEXT_PUBLIC_LOCAL === '1'
 
@@ -89,6 +90,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         await idbm.saveUserId(userId)
       }
       dispatch(actions.updateUserId(userId))
+      initClientHlc(userId)
 
       await pushSub.initialize(dispatch, userId)
 

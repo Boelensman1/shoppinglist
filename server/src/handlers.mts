@@ -224,9 +224,13 @@ export const getFullData = async (): Promise<{
 }
 
 export const addList = async (payload: ParsedMessage_addList['payload']) => {
+  advanceServerHlc(payload)
   await ListModel.transaction(async (trx) => {
-    await ListModel.query(trx).insert(payload).onConflict('id').merge()
-    await insertInitial(trx, payload.id)
+    await ListModel.query(trx)
+      .insert({ id: payload.id, name: payload.name, colour: payload.colour })
+      .onConflict('id')
+      .merge()
+    await insertInitial(trx, payload.id, payload.hlcTimestamp)
   })
 }
 

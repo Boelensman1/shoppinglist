@@ -1,5 +1,5 @@
 import type { ItemRecords, ListId, ListRecords } from 'server/shared'
-import type { UndoableAction } from './Action'
+import type { UndoEntry } from './Action'
 
 export interface State {
   userId: string
@@ -10,8 +10,8 @@ export interface State {
   idbmLoaded: boolean
   serverLoaded: boolean
   wsConnectTimedOut: boolean
-  undoList: UndoableAction[]
-  redoList: UndoableAction[]
+  undoList: UndoEntry[]
+  redoList: UndoEntry[]
   webSocketState: 'connected' | 'disconnected'
   hasPushNotificationsSubscription: boolean
   canEnablePushNotifications: boolean

@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest'
 import type { ItemId, ListId } from 'server/shared'
 import type { Action, UndoableAction } from '../../types/store/Action'
 
+const TEST_HLC = 'test-hlc-ts'
+
 // --- Helpers ---
 
 function deferred<T = void>() {
@@ -22,7 +24,7 @@ function makeCheckAction(
 ): Action & { type: 'UPDATE_LIST_ITEM_CHECKED' } {
   return {
     type: 'UPDATE_LIST_ITEM_CHECKED' as const,
-    payload: { id: id as ItemId, newChecked },
+    payload: { id: id as ItemId, newChecked, hlcTimestamp: TEST_HLC },
     from: 'user',
   }
 }
@@ -41,6 +43,7 @@ function makeAddAction(item: {
       deleted: false,
       prevItemId: 'HEAD' as const,
       listId: item.listId as ListId,
+      hlcTimestamp: TEST_HLC,
     },
     from: 'user',
   }
@@ -52,7 +55,7 @@ function makeUpdateValueAction(
 ): Action & { type: 'UPDATE_LIST_ITEM_VALUE' } {
   return {
     type: 'UPDATE_LIST_ITEM_VALUE' as const,
-    payload: { id: id as ItemId, newValue },
+    payload: { id: id as ItemId, newValue, hlcTimestamp: TEST_HLC },
     from: 'user',
   }
 }
@@ -60,7 +63,7 @@ function makeUpdateValueAction(
 function makeClearListAction(listId: string): Action & { type: 'CLEAR_LIST' } {
   return {
     type: 'CLEAR_LIST' as const,
-    payload: { listId: listId as ListId },
+    payload: { listId: listId as ListId, hlcTimestamp: TEST_HLC },
     from: 'user',
   }
 }
@@ -184,6 +187,7 @@ describe('TrpcManager', () => {
       expect(mockMutations.updateListItemChecked).toHaveBeenCalledWith({
         id: 'item1',
         newChecked: true,
+        hlcTimestamp: TEST_HLC,
       })
     })
 
@@ -206,11 +210,11 @@ describe('TrpcManager', () => {
       expect(mockMutations.batch).toHaveBeenCalledWith([
         {
           type: 'UPDATE_LIST_ITEM_CHECKED',
-          payload: { id: 'a', newChecked: true },
+          payload: { id: 'a', newChecked: true, hlcTimestamp: TEST_HLC },
         },
         {
           type: 'UPDATE_LIST_ITEM_VALUE',
-          payload: { id: 'b', newValue: 'hello' },
+          payload: { id: 'b', newValue: 'hello', hlcTimestamp: TEST_HLC },
         },
       ])
     })
@@ -252,7 +256,7 @@ describe('TrpcManager', () => {
       expect(mockMutations.syncWithServer).toHaveBeenCalledWith([
         {
           type: 'UPDATE_LIST_ITEM_CHECKED',
-          payload: { id: 'item1', newChecked: true },
+          payload: { id: 'item1', newChecked: true, hlcTimestamp: TEST_HLC },
         },
       ])
     })
@@ -285,7 +289,7 @@ describe('TrpcManager', () => {
         [
           {
             type: 'REMOVE_LIST_ITEM' as const,
-            payload: { id: 'i1' as ItemId },
+            payload: { id: 'i1' as ItemId, hlcTimestamp: TEST_HLC },
             from: 'user' as const,
           },
           'removeListItem',
@@ -296,7 +300,12 @@ describe('TrpcManager', () => {
         [
           {
             type: 'ADD_LIST' as const,
-            payload: { id: 'l1' as ListId, name: 'Test', colour: '#000' },
+            payload: {
+              id: 'l1' as ListId,
+              name: 'Test',
+              colour: '#000',
+              hlcTimestamp: TEST_HLC,
+            },
             from: 'user' as const,
           },
           'addList',
@@ -407,7 +416,7 @@ describe('TrpcManager', () => {
       expect(mockMutations.syncWithServer).toHaveBeenCalledWith([
         {
           type: 'UPDATE_LIST_ITEM_CHECKED',
-          payload: { id: 'item1', newChecked: true },
+          payload: { id: 'item1', newChecked: true, hlcTimestamp: TEST_HLC },
         },
       ])
     })
@@ -429,7 +438,7 @@ describe('TrpcManager', () => {
       expect(mockMutations.syncWithServer).toHaveBeenCalledWith([
         {
           type: 'UPDATE_LIST_ITEM_CHECKED',
-          payload: { id: 'item1', newChecked: true },
+          payload: { id: 'item1', newChecked: true, hlcTimestamp: TEST_HLC },
         },
       ])
     })
@@ -454,15 +463,15 @@ describe('TrpcManager', () => {
         expect.arrayContaining([
           {
             type: 'UPDATE_LIST_ITEM_CHECKED',
-            payload: { id: 'a', newChecked: true },
+            payload: { id: 'a', newChecked: true, hlcTimestamp: TEST_HLC },
           },
           {
             type: 'UPDATE_LIST_ITEM_CHECKED',
-            payload: { id: 'b', newChecked: false },
+            payload: { id: 'b', newChecked: false, hlcTimestamp: TEST_HLC },
           },
           {
             type: 'UPDATE_LIST_ITEM_VALUE',
-            payload: { id: 'c', newValue: 'hello' },
+            payload: { id: 'c', newValue: 'hello', hlcTimestamp: TEST_HLC },
           },
         ]),
       )
@@ -488,11 +497,11 @@ describe('TrpcManager', () => {
       expect(mockMutations.syncWithServer).toHaveBeenCalledWith([
         {
           type: 'UPDATE_LIST_ITEM_CHECKED',
-          payload: { id: 'item1', newChecked: true },
+          payload: { id: 'item1', newChecked: true, hlcTimestamp: TEST_HLC },
         },
         {
           type: 'UPDATE_LIST_ITEM_VALUE',
-          payload: { id: 'item2', newValue: 'milk' },
+          payload: { id: 'item2', newValue: 'milk', hlcTimestamp: TEST_HLC },
         },
       ])
     })
@@ -517,11 +526,11 @@ describe('TrpcManager', () => {
         expect.arrayContaining([
           {
             type: 'UPDATE_LIST_ITEM_CHECKED',
-            payload: { id: 'item1', newChecked: true },
+            payload: { id: 'item1', newChecked: true, hlcTimestamp: TEST_HLC },
           },
           {
             type: 'UPDATE_LIST_ITEM_VALUE',
-            payload: { id: 'item2', newValue: 'bread' },
+            payload: { id: 'item2', newValue: 'bread', hlcTimestamp: TEST_HLC },
           },
         ]),
       )
@@ -575,7 +584,7 @@ describe('TrpcManager', () => {
       expect(mockMutations.syncWithServer).toHaveBeenCalledWith([
         {
           type: 'UPDATE_LIST_ITEM_CHECKED',
-          payload: { id: 'item1', newChecked: true },
+          payload: { id: 'item1', newChecked: true, hlcTimestamp: TEST_HLC },
         },
       ])
 
@@ -615,7 +624,7 @@ describe('TrpcManager', () => {
       expect(mockMutations.syncWithServer).toHaveBeenCalledWith([
         {
           type: 'UPDATE_LIST_ITEM_CHECKED',
-          payload: { id: 'item1', newChecked: true },
+          payload: { id: 'item1', newChecked: true, hlcTimestamp: TEST_HLC },
         },
       ])
     })
@@ -666,7 +675,7 @@ describe('TrpcManager', () => {
       expect(mockMutations.syncWithServer).toHaveBeenCalledWith([
         {
           type: 'UPDATE_LIST_ITEM_CHECKED',
-          payload: { id: 'item1', newChecked: true },
+          payload: { id: 'item1', newChecked: true, hlcTimestamp: TEST_HLC },
         },
       ])
 
@@ -746,15 +755,15 @@ describe('TrpcManager', () => {
         expect.arrayContaining([
           {
             type: 'UPDATE_LIST_ITEM_CHECKED',
-            payload: { id: 'a', newChecked: true },
+            payload: { id: 'a', newChecked: true, hlcTimestamp: TEST_HLC },
           },
           {
             type: 'UPDATE_LIST_ITEM_CHECKED',
-            payload: { id: 'b', newChecked: true },
+            payload: { id: 'b', newChecked: true, hlcTimestamp: TEST_HLC },
           },
           {
             type: 'UPDATE_LIST_ITEM_VALUE',
-            payload: { id: 'c', newValue: 'eggs' },
+            payload: { id: 'c', newValue: 'eggs', hlcTimestamp: TEST_HLC },
           },
         ]),
       )
@@ -784,7 +793,11 @@ describe('TrpcManager', () => {
           expect.arrayContaining([
             {
               type: 'UPDATE_LIST_ITEM_CHECKED',
-              payload: { id: `item${i}`, newChecked: true },
+              payload: {
+                id: `item${i}`,
+                newChecked: true,
+                hlcTimestamp: TEST_HLC,
+              },
             },
           ]),
         )
@@ -833,7 +846,7 @@ describe('TrpcManager', () => {
       expect(mockMutations.syncWithServer).toHaveBeenCalledWith([
         {
           type: 'UPDATE_LIST_ITEM_CHECKED',
-          payload: { id: 'item1', newChecked: true },
+          payload: { id: 'item1', newChecked: true, hlcTimestamp: TEST_HLC },
         },
       ])
     })
@@ -912,7 +925,7 @@ describe('TrpcManager', () => {
       expect(mockMutations.syncWithServer).toHaveBeenCalledWith([
         {
           type: 'UPDATE_LIST_ITEM_CHECKED',
-          payload: { id: 'b', newChecked: true },
+          payload: { id: 'b', newChecked: true, hlcTimestamp: TEST_HLC },
         },
       ])
     })
@@ -947,7 +960,7 @@ describe('TrpcManager', () => {
       expect(mockMutations.syncWithServer).toHaveBeenCalledWith([
         {
           type: 'UPDATE_LIST_ITEM_CHECKED',
-          payload: { id: 'b', newChecked: true },
+          payload: { id: 'b', newChecked: true, hlcTimestamp: TEST_HLC },
         },
       ])
     })
@@ -973,11 +986,11 @@ describe('TrpcManager', () => {
       expect(mockMutations.syncWithServer).toHaveBeenCalledWith([
         {
           type: 'UPDATE_LIST_ITEM_CHECKED',
-          payload: { id: 'item1', newChecked: true },
+          payload: { id: 'item1', newChecked: true, hlcTimestamp: TEST_HLC },
         },
         {
           type: 'UPDATE_LIST_ITEM_VALUE',
-          payload: { id: 'item2', newValue: 'milk' },
+          payload: { id: 'item2', newValue: 'milk', hlcTimestamp: TEST_HLC },
         },
       ])
 
@@ -999,11 +1012,11 @@ describe('TrpcManager', () => {
         expect.arrayContaining([
           {
             type: 'UPDATE_LIST_ITEM_CHECKED',
-            payload: { id: 'item1', newChecked: true },
+            payload: { id: 'item1', newChecked: true, hlcTimestamp: TEST_HLC },
           },
           {
             type: 'UPDATE_LIST_ITEM_VALUE',
-            payload: { id: 'item2', newValue: 'milk' },
+            payload: { id: 'item2', newValue: 'milk', hlcTimestamp: TEST_HLC },
           },
         ]),
       )
@@ -1041,7 +1054,7 @@ describe('TrpcManager', () => {
       expect(lastCall).toEqual([
         {
           type: 'UPDATE_LIST_ITEM_CHECKED',
-          payload: { id: 'item1', newChecked: true },
+          payload: { id: 'item1', newChecked: true, hlcTimestamp: TEST_HLC },
         },
       ])
     })
@@ -1081,7 +1094,7 @@ describe('TrpcManager', () => {
       expect(secondCall).toEqual([
         {
           type: 'UPDATE_LIST_ITEM_CHECKED',
-          payload: { id: 'item1', newChecked: true },
+          payload: { id: 'item1', newChecked: true, hlcTimestamp: TEST_HLC },
         },
       ])
     })
