@@ -1,6 +1,7 @@
 import z from 'zod'
 
 import type {
+  HlcSchema,
   ItemIdSchema,
   ItemSchema,
   ListIdSchema,
@@ -24,6 +25,7 @@ import type {
   ParsedMessageUndoableFromSchema,
 } from './schemas.mjs'
 
+export type Hlc = z.infer<typeof HlcSchema>
 export type ItemId = z.infer<typeof ItemIdSchema>
 export type ListId = z.infer<typeof ListIdSchema>
 

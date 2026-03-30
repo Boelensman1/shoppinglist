@@ -5,6 +5,8 @@ import {
   ListSchema,
 } from '../shared/index.mjs'
 
+const hlcTimestamp = '2026-03-30T00:00:00.000Z:0000:node1'
+
 describe('ItemSchema', () => {
   it('should validate a valid item', () => {
     const validItem = {
@@ -14,6 +16,7 @@ describe('ItemSchema', () => {
       deleted: false,
       prevItemId: 'INITIAL',
       listId: 'default',
+      hlcTimestamp,
     }
 
     const result = ItemSchema.safeParse(validItem)
@@ -38,6 +41,7 @@ describe('ItemSchema', () => {
       deleted: false,
       prevItemId: 'INITIAL',
       listId: 'default',
+      hlcTimestamp,
     }
 
     const result = ItemSchema.safeParse(invalidItem)
@@ -90,6 +94,7 @@ describe('ParsedMessageSchema', () => {
           deleted: false,
           prevItemId: 'INITIAL',
           listId: 'default',
+          hlcTimestamp,
         },
       }
 
@@ -106,6 +111,7 @@ describe('ParsedMessageSchema', () => {
           checked: false,
           deleted: false,
           listId: 'default',
+          hlcTimestamp,
         },
       }
 
@@ -120,6 +126,7 @@ describe('ParsedMessageSchema', () => {
         type: 'REMOVE_LIST_ITEM',
         payload: {
           id: 'item-1',
+          hlcTimestamp,
         },
       }
 
@@ -135,6 +142,7 @@ describe('ParsedMessageSchema', () => {
         payload: {
           id: 'item-1',
           newValue: 'Updated Milk',
+          hlcTimestamp,
         },
       }
 
@@ -150,6 +158,7 @@ describe('ParsedMessageSchema', () => {
         payload: {
           id: 'item-1',
           newChecked: true,
+          hlcTimestamp,
         },
       }
 
@@ -163,6 +172,7 @@ describe('ParsedMessageSchema', () => {
         payload: {
           id: 'item-1',
           newChecked: 'true', // should be boolean
+          hlcTimestamp,
         },
       }
 
@@ -177,6 +187,7 @@ describe('ParsedMessageSchema', () => {
         type: 'CLEAR_LIST',
         payload: {
           listId: 'default',
+          hlcTimestamp,
         },
       }
 
@@ -199,6 +210,7 @@ describe('ParsedMessageSchema', () => {
               deleted: false,
               prevItemId: 'INITIAL',
               listId: 'default',
+              hlcTimestamp,
             },
           },
           {
@@ -206,6 +218,7 @@ describe('ParsedMessageSchema', () => {
             payload: {
               id: 'item-1',
               newChecked: true,
+              hlcTimestamp,
             },
           },
         ],

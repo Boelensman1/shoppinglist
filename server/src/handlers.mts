@@ -4,17 +4,37 @@ import type { Transaction } from 'objection'
 import ShoppingListEntry from './ShoppingListEntry.mjs'
 import ListModel from './List.mjs'
 import {
+  hlcReceive,
   itemsListToRecords,
+  type Hlc,
   type Item,
   type ItemRecords,
   type List,
-  type ListId,
   type ListRecords,
+  type ParsedMessage_addItem,
+  type ParsedMessage_addList,
+  type ParsedMessage_clearList,
+  type ParsedMessage_removeItem,
+  type ParsedMessage_removeList,
+  type ParsedMessage_setList,
+  type ParsedMessage_signalFinishedShoppingList,
+  type ParsedMessage_subscribeUserPushNotifications,
+  type ParsedMessage_unSubscribeUserPushNotifications,
+  type ParsedMessage_updateChecked,
+  type ParsedMessage_updateList,
+  type ParsedMessage_updateValue,
   type ParsedMessageUndoable,
 } from './shared/index.mjs'
-import { insertInitial } from './index.mjs'
+import { insertInitial } from './insertInitial.mjs'
 import PushSubscription from './PushSubscription.mjs'
 import { env } from './env.mjs'
+import { serverHlc } from './hlcInstance.mjs'
+
+const advanceServerHlc = (payload: Hlc) =>
+  hlcReceive(serverHlc, payload.hlcTimestamp)
+
+const clientStateIsNewer = (existingTs: string, incomingTs: string): boolean =>
+  incomingTs <= existingTs
 
 webpush.setVapidDetails(
   'mailto:me@wigger.email',
@@ -22,57 +42,119 @@ webpush.setVapidDetails(
   env.VAPID_PRIVATE_KEY,
 )
 
-export const addListItem = async (payload: Item, trx?: Transaction) => {
+export const addListItem = async (
+  payload: ParsedMessage_addItem['payload'],
+  trx?: Transaction,
+) => {
+  advanceServerHlc(payload)
   await ShoppingListEntry.transaction(
     trx ?? ShoppingListEntry.knex(),
     async (t) => {
+      // Skip if the existing row has a newer HLC timestamp, to prevent
+      // delayed/out-of-order messages from overwriting more recent data.
+      const existing = await ShoppingListEntry.query(t)
+        .findById(payload.id)
+        .forUpdate()
+      if (
+        existing &&
+        clientStateIsNewer(existing.hlcTimestamp, payload.hlcTimestamp)
+      ) {
+        return
+      }
       await ShoppingListEntry.query(t).insert(payload).onConflict('id').merge()
     },
   )
 }
 
 export const removeListItem = async (
-  payload: { id: string },
+  payload: ParsedMessage_removeItem['payload'],
   trx?: Transaction,
 ) => {
-  await ShoppingListEntry.query(trx)
-    .findById(payload.id)
-    .patch({ deleted: true })
+  advanceServerHlc(payload)
+  await ShoppingListEntry.transaction(
+    trx ?? ShoppingListEntry.knex(),
+    async (t) => {
+      const existing = await ShoppingListEntry.query(t)
+        .findById(payload.id)
+        .forUpdate()
+      if (
+        existing &&
+        clientStateIsNewer(existing.hlcTimestamp, payload.hlcTimestamp)
+      ) {
+        return
+      }
+      await ShoppingListEntry.query(t)
+        .findById(payload.id)
+        .patch({ deleted: true, hlcTimestamp: payload.hlcTimestamp })
+    },
+  )
 }
 
 export const updateListItemValue = async (
-  payload: { id: string; newValue: string },
+  payload: ParsedMessage_updateValue['payload'],
   trx?: Transaction,
 ) => {
-  await ShoppingListEntry.query(trx)
-    .findById(payload.id)
-    .patch({ value: payload.newValue })
+  advanceServerHlc(payload)
+  await ShoppingListEntry.transaction(
+    trx ?? ShoppingListEntry.knex(),
+    async (t) => {
+      const existing = await ShoppingListEntry.query(t)
+        .findById(payload.id)
+        .forUpdate()
+      if (
+        existing &&
+        clientStateIsNewer(existing.hlcTimestamp, payload.hlcTimestamp)
+      ) {
+        return
+      }
+      await ShoppingListEntry.query(t)
+        .findById(payload.id)
+        .patch({ value: payload.newValue, hlcTimestamp: payload.hlcTimestamp })
+    },
+  )
 }
 
 export const updateListItemChecked = async (
-  payload: { id: string; newChecked: boolean },
+  payload: ParsedMessage_updateChecked['payload'],
   trx?: Transaction,
 ) => {
-  await ShoppingListEntry.query(trx)
-    .findById(payload.id)
-    .patch({ checked: payload.newChecked })
+  advanceServerHlc(payload)
+  await ShoppingListEntry.transaction(
+    trx ?? ShoppingListEntry.knex(),
+    async (t) => {
+      const existing = await ShoppingListEntry.query(t)
+        .findById(payload.id)
+        .forUpdate()
+      if (
+        existing &&
+        clientStateIsNewer(existing.hlcTimestamp, payload.hlcTimestamp)
+      ) {
+        return
+      }
+      await ShoppingListEntry.query(t).findById(payload.id).patch({
+        checked: payload.newChecked,
+        hlcTimestamp: payload.hlcTimestamp,
+      })
+    },
+  )
 }
 
 export const clearList = async (
-  payload: { listId: ListId },
+  payload: ParsedMessage_clearList['payload'],
   trx?: Transaction,
 ) => {
+  advanceServerHlc(payload)
   await ShoppingListEntry.transaction(
     trx ?? ShoppingListEntry.knex(),
     async (t) => {
       await ShoppingListEntry.query(t).where('listId', payload.listId).delete()
-      await insertInitial(t, payload.listId)
+      await insertInitial(t, payload.listId, payload.hlcTimestamp)
     },
   )
 }
 
 export const setList = async (
-  payload: Record<string, Item>,
+  payload: ParsedMessage_setList['payload'],
   trx?: Transaction,
 ) => {
   await ShoppingListEntry.transaction(
@@ -141,21 +223,25 @@ export const getFullData = async (): Promise<{
   return { items, lists }
 }
 
-export const addList = async (payload: List) => {
+export const addList = async (payload: ParsedMessage_addList['payload']) => {
   await ListModel.transaction(async (trx) => {
     await ListModel.query(trx).insert(payload).onConflict('id').merge()
     await insertInitial(trx, payload.id)
   })
 }
 
-export const updateList = async (payload: List) => {
+export const updateList = async (
+  payload: ParsedMessage_updateList['payload'],
+) => {
   await ListModel.query().findById(payload.id).patch({
     name: payload.name,
     colour: payload.colour,
   })
 }
 
-export const removeList = async (payload: { id: ListId }) => {
+export const removeList = async (
+  payload: ParsedMessage_removeList['payload'],
+) => {
   // Prevent deleting the last list
   const count = await ListModel.query().resultSize()
   if (count <= 1) {
@@ -168,14 +254,9 @@ export const removeList = async (payload: { id: ListId }) => {
   })
 }
 
-export const subscribePushNotifications = async (payload: {
-  userId: string
-  subscription: {
-    endpoint: string
-    expirationTime?: number | null
-    keys: { auth: string; p256dh: string }
-  }
-}) => {
+export const subscribePushNotifications = async (
+  payload: ParsedMessage_subscribeUserPushNotifications['payload'],
+) => {
   const { userId, subscription } = payload
 
   await PushSubscription.transaction(async (trx) => {
@@ -202,11 +283,17 @@ export const subscribePushNotifications = async (payload: {
   })
 }
 
-export const unsubscribePushNotifications = async (userId: string) => {
+export const unsubscribePushNotifications = async (
+  payload: ParsedMessage_unSubscribeUserPushNotifications['payload'],
+) => {
+  const { userId } = payload
   await PushSubscription.query().findOne({ userId }).delete()
 }
 
-export const signalFinishedShoppingList = async (userId: string) => {
+export const signalFinishedShoppingList = async (
+  payload: ParsedMessage_signalFinishedShoppingList['payload'],
+) => {
+  const { userId } = payload
   const subscriptions = await PushSubscription.query().where(
     'userId',
     '!=',

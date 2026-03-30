@@ -24,6 +24,11 @@ export const messageTypes = {
 export const ItemIdSchema = z.string().brand('ItemId')
 export const ListIdSchema = z.string().brand('ListId')
 
+// HLC schema
+export const HlcSchema = z.object({
+  hlcTimestamp: z.string(),
+})
+
 // List schema
 export const ListSchema = z.object({
   id: ListIdSchema,
@@ -39,6 +44,7 @@ export const ItemSchema = z.object({
   deleted: z.boolean(),
   prevItemId: ItemIdSchema.or(z.literal('HEAD')),
   listId: ListIdSchema,
+  ...HlcSchema.shape,
 })
 
 // PushSubscription schema (from web-push)
@@ -63,6 +69,7 @@ export const ParsedMessage_removeItemSchema = z.object({
     id: ItemIdSchema,
     displayedPrevItemId: ItemIdSchema.optional(),
     displayedNextItemId: ItemIdSchema.optional(),
+    ...HlcSchema.shape,
   }),
 })
 
@@ -71,6 +78,7 @@ export const ParsedMessage_updateValueSchema = z.object({
   payload: z.object({
     id: ItemIdSchema,
     newValue: z.string(),
+    ...HlcSchema.shape,
   }),
 })
 
@@ -79,6 +87,7 @@ export const ParsedMessage_updateCheckedSchema = z.object({
   payload: z.object({
     id: ItemIdSchema,
     newChecked: z.boolean(),
+    ...HlcSchema.shape,
   }),
 })
 
@@ -86,6 +95,7 @@ export const ParsedMessage_clearListSchema = z.object({
   type: z.literal(messageTypes.CLEAR_LIST),
   payload: z.object({
     listId: ListIdSchema,
+    ...HlcSchema.shape,
   }),
 })
 

@@ -139,7 +139,7 @@ export const appRouter = router({
   signalFinishedShoppingList: publicProcedure
     .input(ParsedMessage_signalFinishedShoppingListSchema.shape.payload)
     .mutation(async ({ input }) => {
-      await handlers.signalFinishedShoppingList(input.userId)
+      await handlers.signalFinishedShoppingList(input)
     }),
 
   subscribePushNotifications: publicProcedure
@@ -151,7 +151,7 @@ export const appRouter = router({
   unsubscribePushNotifications: publicProcedure
     .input(ParsedMessage_unSubscribeUserPushNotificationsSchema.shape.payload)
     .mutation(async ({ input }) => {
-      await handlers.unsubscribePushNotifications(input.userId)
+      await handlers.unsubscribePushNotifications(input)
     }),
 
   onBroadcast: publicProcedure.subscription(async function* ({ ctx, signal }) {

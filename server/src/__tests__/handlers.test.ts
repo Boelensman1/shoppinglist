@@ -1,49 +1,16 @@
-import {
-  describe,
-  it,
-  expect,
-  beforeAll,
-  afterAll,
-  beforeEach,
-  vi,
-} from 'vitest'
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import Knex from 'knex'
 import { Model } from 'objection'
-import type { ItemId, ListId } from '../shared/index.mjs'
-
-// Mock index.mts to prevent server startup side effects
-vi.mock('../index.mjs', async () => {
-  // Dynamic import to get the actual insertInitial after DB is set up
-  // We return a lazy wrapper that delegates to the real DB operations
-  return {
-    insertInitial: async (trx: unknown, listId: string = 'default') => {
-      const ShoppingListEntry = (await import('../ShoppingListEntry.mjs'))
-        .default
-      const itemId = (
-        listId === 'default' ? 'INITIAL' : `initial-${listId}`
-      ) as ItemId
-      return ShoppingListEntry.query(trx as never)
-        .insert({
-          id: itemId,
-          value: '',
-          checked: false,
-          deleted: false,
-          prevItemId: 'HEAD',
-          listId: listId as ListId,
-        })
-        .onConflict('id')
-        .ignore()
-    },
-  }
-})
-
-const { default: ShoppingListEntry } = await import('../ShoppingListEntry.mjs')
-const { default: List } = await import('../List.mjs')
-const handlers = await import('../handlers.mjs')
+import { HLC_ZERO, type ItemId, type ListId } from '../shared/index.mjs'
+import ShoppingListEntry from '../ShoppingListEntry.mjs'
+import List from '../List.mjs'
+import * as handlers from '../handlers.mjs'
 
 let knex: ReturnType<typeof Knex>
 
 const DEFAULT_LIST_ID = 'default' as ListId
+const ITEM_1 = 'item-1' as ItemId
+const TS_TEST = '1700000000000:00000:test'
 
 beforeAll(async () => {
   knex = Knex({
@@ -68,6 +35,7 @@ beforeAll(async () => {
     table.boolean('checked').notNullable()
     table.boolean('deleted').notNullable()
     table.string('listId').notNullable().defaultTo('default')
+    table.string('hlcTimestamp').nullable()
     table.timestamps(true, true, true)
   })
 
@@ -126,10 +94,10 @@ describe('addList', () => {
 
     const items = await ShoppingListEntry.query().where('listId', 'list-1')
     expect(items).toHaveLength(1)
-    expect(items[0].id).toBe('initial-list-1')
-    expect(items[0].value).toBe('')
-    expect(items[0].prevItemId).toBe('HEAD')
-    expect(items[0].listId).toBe('list-1')
+    expect(items[0]!.id).toBe('initial-list-1')
+    expect(items[0]!.value).toBe('')
+    expect(items[0]!.prevItemId).toBe('HEAD')
+    expect(items[0]!.listId).toBe('list-1')
   })
 })
 
@@ -144,12 +112,13 @@ describe('removeList', () => {
 
     // Add items to both lists
     await ShoppingListEntry.query().insert({
-      id: 'item-1' as ItemId,
+      id: ITEM_1,
       value: 'Default item',
       checked: false,
       deleted: false,
       prevItemId: 'HEAD',
       listId: DEFAULT_LIST_ID,
+      hlcTimestamp: HLC_ZERO,
     })
     await ShoppingListEntry.query().insert({
       id: 'item-2' as ItemId,
@@ -158,17 +127,18 @@ describe('removeList', () => {
       deleted: false,
       prevItemId: 'HEAD',
       listId: 'list-2' as ListId,
+      hlcTimestamp: HLC_ZERO,
     })
 
     await handlers.removeList({ id: 'list-2' as ListId })
 
     const lists = await List.query()
     expect(lists).toHaveLength(1)
-    expect(lists[0].id).toBe('default')
+    expect(lists[0]!.id).toBe('default')
 
     const items = await ShoppingListEntry.query()
     expect(items).toHaveLength(1)
-    expect(items[0].id).toBe('item-1')
+    expect(items[0]!.id).toBe('item-1')
   })
 
   it('should prevent removing the last list', async () => {
@@ -189,12 +159,13 @@ describe('clearList', () => {
 
     // Add items to both lists
     await ShoppingListEntry.query().insert({
-      id: 'item-1' as ItemId,
+      id: ITEM_1,
       value: 'Default item',
       checked: false,
       deleted: false,
       prevItemId: 'HEAD',
       listId: DEFAULT_LIST_ID,
+      hlcTimestamp: HLC_ZERO,
     })
     await ShoppingListEntry.query().insert({
       id: 'item-2' as ItemId,
@@ -203,9 +174,13 @@ describe('clearList', () => {
       deleted: false,
       prevItemId: 'HEAD',
       listId: 'list-2' as ListId,
+      hlcTimestamp: HLC_ZERO,
     })
 
-    await handlers.clearList({ listId: DEFAULT_LIST_ID })
+    await handlers.clearList({
+      listId: DEFAULT_LIST_ID,
+      hlcTimestamp: TS_TEST,
+    })
 
     const items = await ShoppingListEntry.query()
     // Should have the other list's item + the new initial item for default list
@@ -213,38 +188,40 @@ describe('clearList', () => {
     const otherItems = items.filter((i) => i.listId === ('list-2' as ListId))
 
     expect(otherItems).toHaveLength(1)
-    expect(otherItems[0].id).toBe('item-2')
+    expect(otherItems[0]!.id).toBe('item-2')
     expect(defaultItems).toHaveLength(1)
-    expect(defaultItems[0].value).toBe('')
+    expect(defaultItems[0]!.value).toBe('')
   })
 })
 
 describe('addListItem', () => {
   it('should store item with correct listId', async () => {
     await handlers.addListItem({
-      id: 'item-1' as ItemId,
+      id: ITEM_1,
       value: 'Milk',
       checked: false,
       deleted: false,
       prevItemId: 'HEAD',
       listId: DEFAULT_LIST_ID,
+      hlcTimestamp: TS_TEST,
     })
 
     const items = await ShoppingListEntry.query()
     expect(items).toHaveLength(1)
-    expect(items[0].listId).toBe('default')
+    expect(items[0]!.listId).toBe('default')
   })
 })
 
 describe('getFullData', () => {
   it('should return both items and lists', async () => {
     await ShoppingListEntry.query().insert({
-      id: 'item-1' as ItemId,
+      id: ITEM_1,
       value: 'Milk',
       checked: false,
       deleted: false,
       prevItemId: 'HEAD',
       listId: DEFAULT_LIST_ID,
+      hlcTimestamp: HLC_ZERO,
     })
 
     const result = await handlers.getFullData()
@@ -254,6 +231,122 @@ describe('getFullData', () => {
     expect(Object.keys(result.items)).toHaveLength(1)
     expect(Object.keys(result.lists)).toHaveLength(1)
     expect(result.lists[DEFAULT_LIST_ID]).toBeDefined()
-    expect(result.lists[DEFAULT_LIST_ID].name).toBe('Boodschappen')
+    expect(result.lists[DEFAULT_LIST_ID]!.name).toBe('Boodschappen')
+  })
+})
+
+describe('LWW conflict resolution', () => {
+  const TS_OLD = '1700000000000:00000:client-a'
+  const TS_NEW = '1700000001000:00000:client-b'
+
+  it('should accept a mutation with a newer timestamp', async () => {
+    await ShoppingListEntry.query().insert({
+      id: ITEM_1,
+      value: 'Milk',
+      checked: false,
+      deleted: false,
+      prevItemId: 'HEAD',
+      listId: DEFAULT_LIST_ID,
+      hlcTimestamp: TS_OLD,
+    })
+
+    await handlers.updateListItemChecked({
+      id: ITEM_1,
+      newChecked: true,
+      hlcTimestamp: TS_NEW,
+    })
+
+    const item = await ShoppingListEntry.query().findById('item-1')
+    expect(item!.checked).toBe(true)
+    expect(item!.hlcTimestamp).toBe(TS_NEW)
+  })
+
+  it('should reject a mutation with an older timestamp', async () => {
+    await ShoppingListEntry.query().insert({
+      id: ITEM_1,
+      value: 'Milk',
+      checked: true,
+      deleted: false,
+      prevItemId: 'HEAD',
+      listId: DEFAULT_LIST_ID,
+      hlcTimestamp: TS_NEW,
+    })
+
+    await handlers.updateListItemChecked({
+      id: ITEM_1,
+      newChecked: false,
+      hlcTimestamp: TS_OLD,
+    })
+
+    const item = await ShoppingListEntry.query().findById('item-1')
+    expect(item!.checked).toBe(true) // unchanged
+    expect(item!.hlcTimestamp).toBe(TS_NEW)
+  })
+
+  it('should reject addListItem with older timestamp on existing item', async () => {
+    await ShoppingListEntry.query().insert({
+      id: ITEM_1,
+      value: 'Milk',
+      checked: true,
+      deleted: false,
+      prevItemId: 'HEAD',
+      listId: DEFAULT_LIST_ID,
+      hlcTimestamp: TS_NEW,
+    })
+
+    await handlers.addListItem({
+      id: ITEM_1,
+      value: 'Bread',
+      checked: false,
+      deleted: false,
+      prevItemId: 'HEAD',
+      listId: DEFAULT_LIST_ID,
+      hlcTimestamp: TS_OLD,
+    })
+
+    const item = await ShoppingListEntry.query().findById('item-1')
+    expect(item!.value).toBe('Milk') // unchanged
+    expect(item!.checked).toBe(true) // unchanged
+  })
+
+  it('should apply removeListItem LWW guard', async () => {
+    await ShoppingListEntry.query().insert({
+      id: ITEM_1,
+      value: 'Milk',
+      checked: false,
+      deleted: false,
+      prevItemId: 'HEAD',
+      listId: DEFAULT_LIST_ID,
+      hlcTimestamp: TS_NEW,
+    })
+
+    await handlers.removeListItem({
+      id: ITEM_1,
+      hlcTimestamp: TS_OLD,
+    })
+
+    const item = await ShoppingListEntry.query().findById('item-1')
+    expect(item!.deleted).toBe(false) // unchanged — stale write rejected
+  })
+
+  it('should apply updateListItemValue LWW guard', async () => {
+    await ShoppingListEntry.query().insert({
+      id: ITEM_1,
+      value: 'Milk',
+      checked: false,
+      deleted: false,
+      prevItemId: 'HEAD',
+      listId: DEFAULT_LIST_ID,
+      hlcTimestamp: TS_NEW,
+    })
+
+    await handlers.updateListItemValue({
+      id: ITEM_1,
+      newValue: 'Stale value',
+      hlcTimestamp: TS_OLD,
+    })
+
+    const item = await ShoppingListEntry.query().findById('item-1')
+    expect(item!.value).toBe('Milk') // unchanged
   })
 })

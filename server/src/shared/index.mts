@@ -1,4 +1,5 @@
 export {
+  HlcSchema,
   ItemSchema,
   ListSchema,
   ListIdSchema,
@@ -23,7 +24,19 @@ export {
 
 export { itemsListToRecords } from './utils.mjs'
 
+export {
+  createHlc,
+  hlcNow,
+  hlcReceive,
+  hlcCompare,
+  hlcPack,
+  hlcUnpack,
+  HLC_ZERO,
+  type HlcState,
+} from './hlc.mjs'
+
 export type {
+  Hlc,
   Item,
   ItemId,
   ItemRecords,

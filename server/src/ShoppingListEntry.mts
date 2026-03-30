@@ -9,6 +9,7 @@ class ShoppingListEntry extends Model {
   prevItemId!: ItemId | 'HEAD'
   deleted!: boolean
   listId!: ListId
+  hlcTimestamp!: string
   createdAt!: string
   updatedAt?: string
 
