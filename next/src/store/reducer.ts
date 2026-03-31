@@ -194,7 +194,7 @@ const applyAction = (
           for (const id of Object.keys(draft.items)) {
             if (!incoming[id as ItemId]) {
               const localTs = draft.items[id as ItemId].hlcTimestamp
-              if (maxServerTs && localTs && localTs <= maxServerTs) {
+              if (maxServerTs && localTs && localTs < maxServerTs) {
                 delete draft.items[id as ItemId]
               }
             }
