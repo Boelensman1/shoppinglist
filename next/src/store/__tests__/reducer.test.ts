@@ -41,6 +41,7 @@ function makeItem(
     checked: boolean
     deleted: boolean
     listId: string
+    hlcTimestamp: string
   }> = {},
 ) {
   return {
@@ -50,6 +51,7 @@ function makeItem(
     deleted: overrides.deleted ?? false,
     prevItemId: 'HEAD' as const,
     listId: (overrides.listId ?? 'default') as ListId,
+    hlcTimestamp: overrides.hlcTimestamp ?? '0000000000000-0000-test',
   }
 }
 
@@ -72,7 +74,11 @@ describe('Reducer: INITIAL_FULL_DATA wholesale overwrite bug', () => {
     // 2. User checks the item locally
     state = applyAction(state, {
       type: 'UPDATE_LIST_ITEM_CHECKED',
-      payload: { id: 'item1' as ItemId, newChecked: true },
+      payload: {
+        id: 'item1' as ItemId,
+        newChecked: true,
+        hlcTimestamp: '0000000000001-0000-test',
+      },
       from: 'user',
     })
     expect(state.items['item1' as ItemId].checked).toBe(true)
@@ -112,7 +118,11 @@ describe('Reducer: INITIAL_FULL_DATA wholesale overwrite bug', () => {
     // User edits the value locally
     state = applyAction(state, {
       type: 'UPDATE_LIST_ITEM_VALUE',
-      payload: { id: 'item1' as ItemId, newValue: 'oat milk' },
+      payload: {
+        id: 'item1' as ItemId,
+        newValue: 'oat milk',
+        hlcTimestamp: '0000000000001-0000-test',
+      },
       from: 'user',
     })
     expect(state.items['item1' as ItemId].value).toBe('oat milk')
@@ -177,7 +187,10 @@ describe('Reducer: INITIAL_FULL_DATA wholesale overwrite bug', () => {
     // User deletes the item locally
     state = applyAction(state, {
       type: 'REMOVE_LIST_ITEM',
-      payload: { id: 'item1' as ItemId },
+      payload: {
+        id: 'item1' as ItemId,
+        hlcTimestamp: '0000000000001-0000-test',
+      },
       from: 'user',
     })
     expect(state.items['item1' as ItemId].deleted).toBe(true)
