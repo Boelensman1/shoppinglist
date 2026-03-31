@@ -1,26 +1,17 @@
-import type { Action, UndoableAction } from '../types/store/Action'
+import type { Action } from '../types/store/Action'
 import type { Dispatch } from '../types/store/Dispatch'
 import type { ItemRecords, ListRecords } from 'server/shared'
 import actions, { isUndoableAction } from '../store/actions'
 import { createTrpcClient, type TrpcClient } from './trpc'
 import { clientHlcReceive } from './hlcClient'
-
-/**
- * Strip client-only fields (`from`, `redo`) from actions before sending to tRPC.
- * These fields exist on client Action types but are not part of the Zod input schemas.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function stripClientFields(action: Record<string, any>): Record<string, any> {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { from, redo, ...rest } = action
-  if ('payload' in rest && Array.isArray(rest.payload)) {
-    return {
-      ...rest,
-      payload: rest.payload.map(stripClientFields),
-    }
-  }
-  return rest
-}
+import {
+  type QueuedAction,
+  hasRoute,
+  getRoute,
+  stripClientFields,
+  createQueuedAction,
+  MAX_SEND_ATTEMPTS,
+} from './actionRoutes'
 
 class TrpcManager {
   private trpc: TrpcClient | null = null
@@ -28,8 +19,10 @@ class TrpcManager {
   private connected = false
   private subscriptionCleanup: (() => void) | null = null
 
-  private offlineMessageQueue: Action[] = []
-  private unconfirmedActions: Action[] = []
+  // Unified action queue - replaces offlineMessageQueue and unconfirmedActions
+  private actionQueue: Map<string, QueuedAction> = new Map()
+
+  // Sync coordination
   private syncInProgress = false
   private pendingResync = false
 
@@ -49,9 +42,7 @@ class TrpcManager {
       },
       onClose: () => {
         console.log('WebSocket closed')
-        this.connected = false
-        this.offlineMessageQueue.push(...this.unconfirmedActions)
-        this.unconfirmedActions = []
+        this.handleDisconnect()
         dispatch(actions.webSocketConnectionStateChanged('disconnected'))
       },
     })
@@ -73,10 +64,7 @@ class TrpcManager {
         if (payload?.hlcTimestamp && typeof payload.hlcTimestamp === 'string') {
           clientHlcReceive(payload.hlcTimestamp)
         }
-        dispatch({
-          ...action,
-          from: 'server',
-        } as Action)
+        dispatch({ ...action, from: 'server' } as Action)
       },
       onError: (err: unknown) => {
         console.error('tRPC subscription error:', err)
@@ -90,112 +78,111 @@ class TrpcManager {
   }
 
   disconnect() {
-    if (this.subscriptionCleanup) {
-      this.subscriptionCleanup()
-      this.subscriptionCleanup = null
-    }
-    if (this.trpc) {
-      this.trpc.wsClient.close()
-      this.trpc = null
-    }
+    this.subscriptionCleanup?.()
+    this.subscriptionCleanup = null
+    this.trpc?.wsClient.close()
+    this.trpc = null
     this.connected = false
     this.dispatch = null
   }
 
-  sendAction(action: Action, queueIfOffline = true) {
-    if (!this.connected || !this.trpc) {
-      if (queueIfOffline) {
-        this.offlineMessageQueue.push(action)
-      }
-      return
-    }
-
-    const client = this.trpc.client
-    const stripped = stripClientFields(
-      action as unknown as Record<string, unknown>,
-    )
-
-    const trackMutation = (promise: Promise<unknown>) => {
-      this.unconfirmedActions.push(action)
-      promise
-        .then(() => {
-          const idx = this.unconfirmedActions.indexOf(action)
-          if (idx !== -1) this.unconfirmedActions.splice(idx, 1)
-        })
-        .catch((err) => {
-          console.error(err)
-        })
-    }
-
-    // Fire-and-forget: call the appropriate tRPC mutation
-    switch (action.type) {
-      case 'ADD_LIST_ITEM':
-        trackMutation(client.addListItem.mutate(stripped.payload as never))
-        break
-      case 'REMOVE_LIST_ITEM':
-        trackMutation(client.removeListItem.mutate(stripped.payload as never))
-        break
-      case 'UPDATE_LIST_ITEM_VALUE':
-        trackMutation(
-          client.updateListItemValue.mutate(stripped.payload as never),
-        )
-        break
-      case 'UPDATE_LIST_ITEM_CHECKED':
-        trackMutation(
-          client.updateListItemChecked.mutate(stripped.payload as never),
-        )
-        break
-      case 'CLEAR_LIST':
-        trackMutation(client.clearList.mutate(stripped.payload as never))
-        break
-      case 'ADD_LIST':
-        trackMutation(client.addList.mutate(stripped.payload as never))
-        break
-      case 'UPDATE_LIST':
-        trackMutation(client.updateList.mutate(stripped.payload as never))
-        break
-      case 'REMOVE_LIST':
-        trackMutation(client.removeList.mutate(stripped.payload as never))
-        break
-      case 'SET_LIST':
-        trackMutation(client.setList.mutate(stripped.payload as never))
-        break
-      case 'BATCH':
-        trackMutation(
-          client.batch.mutate(
-            (stripped.payload as UndoableAction[]).map(
-              (a) =>
-                stripClientFields(
-                  a as unknown as Record<string, unknown>,
-                ) as never,
-            ),
-          ),
-        )
-        break
-      case 'SIGNAL_FINISHED_SHOPPINGLIST':
-        trackMutation(
-          client.signalFinishedShoppingList.mutate(stripped.payload as never),
-        )
-        break
-      case 'SUBSCRIBE_USER_PUSH_NOTIFICATIONS':
-        trackMutation(
-          client.subscribePushNotifications.mutate(stripped.payload as never),
-        )
-        break
-      case 'UNSUBSCRIBE_USER_PUSH_NOTIFICATIONS':
-        trackMutation(
-          client.unsubscribePushNotifications.mutate(stripped.payload as never),
-        )
-        break
-      default:
-        // SYNC_WITH_SERVER, INITIAL_FULL_DATA, and client-only actions are not sent as individual mutations
-        if (queueIfOffline) {
-          this.offlineMessageQueue.push(action)
-        }
-        break
+  /**
+   * Handle disconnect - reset all sending actions back to pending.
+   */
+  private handleDisconnect() {
+    this.connected = false
+    for (const q of this.actionQueue.values()) {
+      if (q.state === 'sending') q.state = 'pending'
     }
   }
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Queue helpers
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Mark an action as failed. Removes from queue if max attempts exceeded.
+   */
+  private markFailed(queued: QueuedAction, error: unknown) {
+    queued.attempts++
+    if (queued.attempts >= MAX_SEND_ATTEMPTS) {
+      console.error(
+        `Action ${queued.action.type} exceeded max attempts (${MAX_SEND_ATTEMPTS}), removing`,
+      )
+      this.actionQueue.delete(queued.id)
+    } else {
+      queued.state = 'failed'
+      queued.lastError = error instanceof Error ? error.message : String(error)
+    }
+  }
+
+  /**
+   * Prepare an action's payload for sending to the server.
+   * Strips client-only fields (from, redo).
+   */
+  private preparePayload(action: Action): unknown {
+    const stripped = stripClientFields(
+      action as unknown as Record<string, unknown>,
+    )
+    return stripped.payload
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Public API
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Queue an action for sending to the server.
+   * If online, attempts to send immediately.
+   */
+  sendAction(action: Action, queueIfOffline = true) {
+    // Check if this action type has a route (is sendable to server)
+    if (!hasRoute(action.type)) return
+
+    // If offline and shouldn't queue, just return
+    if (!this.connected && !queueIfOffline) return
+
+    const queued = createQueuedAction(action)
+    this.actionQueue.set(queued.id, queued)
+
+    // If online, try to send immediately
+    if (this.connected && this.trpc) {
+      this.sendQueuedAction(queued)
+    }
+  }
+
+  /**
+   * Send a single queued action to the server via its configured mutation.
+   */
+  private sendQueuedAction(queued: QueuedAction) {
+    if (!this.trpc) return
+
+    const route = getRoute(queued.action.type)
+    if (!route) return
+
+    queued.state = 'sending'
+
+    // Get the mutation function dynamically
+    const mutationObj = this.trpc.client[route.mutation] as {
+      mutate?: (p: unknown) => Promise<unknown>
+    }
+    if (!mutationObj?.mutate) {
+      console.error(`No mutation found for ${String(route.mutation)}`)
+      return
+    }
+
+    mutationObj
+      .mutate(this.preparePayload(queued.action) as never)
+      .then(() => this.actionQueue.delete(queued.id))
+      .catch((err) => {
+        console.error(`Mutation failed for ${queued.action.type}:`, err)
+        this.markFailed(queued, err)
+      })
+  }
+
+  /**
+   * Synchronize with server - send all pending syncable actions.
+   */
   syncWithServer() {
     if (!this.trpc || !this.dispatch) return
 
@@ -203,42 +190,43 @@ class TrpcManager {
       this.pendingResync = true
       return
     }
-
     this.syncInProgress = true
 
-    // Snapshot the current queues
-    this.offlineMessageQueue.push(...this.unconfirmedActions)
-    this.unconfirmedActions = []
-    const syncingQueue = [...this.offlineMessageQueue]
-    this.offlineMessageQueue = []
+    // Collect syncable actions: undoable actions where syncable !== false
+    const syncable = Array.from(this.actionQueue.values())
+      .filter((q) => {
+        const route = getRoute(q.action.type)
+        return route?.syncable !== false && isUndoableAction(q.action)
+      })
+      .sort((a, b) => a.queuedAt - b.queuedAt) // Maintain order
 
-    const strippedActions = syncingQueue
-      .filter((action) => isUndoableAction(action))
-      .map(
-        (a) =>
-          stripClientFields(a as unknown as Record<string, unknown>) as never,
-      )
+    const strippedActions = syncable.map(
+      (q) =>
+        stripClientFields(
+          q.action as unknown as Record<string, unknown>,
+        ) as never,
+    )
 
     const dispatch = this.dispatch
     this.trpc.client.syncWithServer
       .mutate(strippedActions)
       .then((fullData: { items: ItemRecords; lists: ListRecords }) => {
+        // Success - remove synced actions from queue
+        for (const q of syncable) this.actionQueue.delete(q.id)
+
         // Advance client HLC from server state
         for (const item of Object.values(fullData.items)) {
-          if (item.hlcTimestamp) {
-            clientHlcReceive(item.hlcTimestamp)
-          }
+          if (item.hlcTimestamp) clientHlcReceive(item.hlcTimestamp)
         }
         dispatch({
-          type: 'INITIAL_FULL_DATA' as const,
+          type: 'INITIAL_FULL_DATA',
           payload: fullData,
           from: 'server',
         })
       })
       .catch((err) => {
-        console.error(err)
-        // Restore actions to front of queue on failure
-        this.offlineMessageQueue.unshift(...syncingQueue)
+        console.error('Sync failed:', err)
+        for (const q of syncable) this.markFailed(q, err)
       })
       .finally(() => {
         this.syncInProgress = false
@@ -247,6 +235,26 @@ class TrpcManager {
           this.syncWithServer()
         }
       })
+  }
+
+  /**
+   * Get the current queue state for debugging.
+   */
+  getQueueState() {
+    let pending = 0,
+      sending = 0,
+      failed = 0
+    for (const q of this.actionQueue.values()) {
+      if (q.state === 'pending') pending++
+      else if (q.state === 'sending') sending++
+      else if (q.state === 'failed') failed++
+    }
+    return { pending, sending, failed, total: this.actionQueue.size }
+  }
+
+  // Expose queue for testing
+  _getActionQueue() {
+    return this.actionQueue
   }
 }
 

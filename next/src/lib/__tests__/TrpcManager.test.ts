@@ -1099,4 +1099,106 @@ describe('TrpcManager', () => {
       ])
     })
   })
+
+  // =====================
+  // Max retry threshold
+  // =====================
+  describe('Max retry threshold', () => {
+    it('removes action from queue after exceeding max attempts via individual mutations', async () => {
+      connectAndOpen()
+
+      // Make mutations fail repeatedly
+      for (let i = 0; i < 10; i++) {
+        const d = deferred()
+        mockMutations.updateListItemChecked.mockReturnValueOnce(d.promise)
+
+        if (i === 0) {
+          manager.sendAction(makeCheckAction('item1', true))
+        } else {
+          // Reconnect triggers individual mutation retry via sendQueuedAction
+          mockCallbacks.onOpen!()
+          // Manually trigger sending the queued action
+          const queue = manager._getActionQueue()
+          const queuedAction = Array.from(queue.values())[0]
+          if (queuedAction) {
+            // @ts-expect-error - accessing private method for testing
+            manager.sendQueuedAction(queuedAction)
+          }
+        }
+
+        d.reject(new Error(`fail ${i + 1}`))
+        await flushPromises()
+
+        if (i < 9) {
+          // Action should still be in queue
+          expect(manager._getActionQueue().size).toBe(1)
+          mockCallbacks.onClose!()
+        }
+      }
+
+      // After 10 failures, action should be removed
+      expect(manager._getActionQueue().size).toBe(0)
+    })
+
+    it('removes action from queue after exceeding max attempts via sync failures', async () => {
+      manager.connect('ws://test', dispatch)
+      manager.sendAction(makeCheckAction('item1', true))
+
+      // Fail sync 10 times
+      for (let i = 0; i < 10; i++) {
+        const syncDeferred = deferred<{ items: object; lists: object }>()
+        mockMutations.syncWithServer.mockReturnValueOnce(syncDeferred.promise)
+
+        mockCallbacks.onOpen!()
+        mockSubCallbacks.onStarted!()
+
+        syncDeferred.reject(new Error(`sync fail ${i + 1}`))
+        await flushPromises()
+
+        if (i < 9) {
+          // Action should still be in queue
+          expect(manager._getActionQueue().size).toBe(1)
+          mockCallbacks.onClose!()
+        }
+      }
+
+      // After 10 sync failures, action should be removed
+      expect(manager._getActionQueue().size).toBe(0)
+    })
+
+    it('action is still retried if under max attempts', async () => {
+      manager.connect('ws://test', dispatch)
+      manager.sendAction(makeCheckAction('item1', true))
+
+      // Fail sync 5 times (under the limit of 10)
+      for (let i = 0; i < 5; i++) {
+        const syncDeferred = deferred<{ items: object; lists: object }>()
+        mockMutations.syncWithServer.mockReturnValueOnce(syncDeferred.promise)
+
+        mockCallbacks.onOpen!()
+        mockSubCallbacks.onStarted!()
+
+        syncDeferred.reject(new Error(`sync fail ${i + 1}`))
+        await flushPromises()
+
+        mockCallbacks.onClose!()
+      }
+
+      // Action should still be in queue
+      expect(manager._getActionQueue().size).toBe(1)
+
+      // Next sync should still include the action
+      const syncDeferred = deferred<{ items: object; lists: object }>()
+      mockMutations.syncWithServer.mockReturnValueOnce(syncDeferred.promise)
+      mockCallbacks.onOpen!()
+      mockSubCallbacks.onStarted!()
+
+      expect(mockMutations.syncWithServer).toHaveBeenLastCalledWith([
+        {
+          type: 'UPDATE_LIST_ITEM_CHECKED',
+          payload: { id: 'item1', newChecked: true, hlcTimestamp: TEST_HLC },
+        },
+      ])
+    })
+  })
 })
